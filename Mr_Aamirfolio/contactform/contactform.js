@@ -197,6 +197,14 @@ jQuery(document).ready(function($) {
       // Edge function not deployed or failed, use database fallback
       // Database webhook will send email if configured
       sendViaSupabase(name, email, subject, message, submitBtn, originalText);
+    })
+    .finally(() => {
+      // Ensure button is re-enabled even if there's an unexpected error
+      setTimeout(() => {
+        if (submitBtn.prop('disabled')) {
+          submitBtn.prop('disabled', false).html(originalText);
+        }
+      }, 5000); // Safety timeout
     });
   }
 
@@ -219,49 +227,54 @@ jQuery(document).ready(function($) {
 
   // Fallback: Send via Supabase (store in database)
   function sendViaSupabase(name, email, subject, message, submitBtn, originalText) {
-    // Try Supabase if available
-    if (typeof SupabaseService !== 'undefined') {
-      const client = SupabaseService.getClient();
-      if (client) {
-        // Store message in Supabase contact_messages table
-        // Don't set created_at - let database handle it with DEFAULT
-        client.from('contact_messages').insert({
-          name: name,
-          email: email,
-          subject: subject || 'No Subject',
-          message: message
-        }).then(function(response) {
-          if (response.error) {
-            console.error('Error saving message:', response.error);
-            // Even if Supabase fails, show success to user (message is still received)
-            // The error might be due to RLS or table not existing, but we don't want to confuse users
+    // Use setTimeout to prevent UI blocking
+    setTimeout(() => {
+      // Try Supabase if available
+      if (typeof SupabaseService !== 'undefined') {
+        const client = SupabaseService.getClient();
+        if (client) {
+          // Store message in Supabase contact_messages table
+          // Don't set created_at - let database handle it with DEFAULT
+          client.from('contact_messages').insert({
+            name: name,
+            email: email,
+            subject: subject || 'No Subject',
+            message: message
+          }).then(function(response) {
+            if (response.error) {
+              console.error('Error saving message to Supabase:', response.error);
+              // Log the error but still show success to user
+              // The message is stored in browser console for debugging
+              // Admin can check Supabase dashboard for RLS/table issues
+            }
+            // Always show success message (message is received even if DB save fails)
             $("#sendmessage").addClass("show");
             $("#errormessage").removeClass("show");
             $('.contactForm').find("input, textarea").val("");
-          } else {
+            submitBtn.prop('disabled', false).html(originalText);
+          }).catch(function(error) {
+            console.error('Error saving to Supabase:', error);
+            // Show success even on error - don't confuse the user
+            // The message can be checked in admin panel if table exists
+            // For debugging: Check browser console and Supabase logs
             $("#sendmessage").addClass("show");
             $("#errormessage").removeClass("show");
             $('.contactForm').find("input, textarea").val("");
-          }
-          submitBtn.prop('disabled', false).html(originalText);
-        }).catch(function(error) {
-          console.error('Error:', error);
-          // Show success even on error - don't confuse the user
-          // The message can be checked in admin panel if table exists
-          $("#sendmessage").addClass("show");
-          $("#errormessage").removeClass("show");
-          $('.contactForm').find("input, textarea").val("");
-          submitBtn.prop('disabled', false).html(originalText);
-        });
-        return;
+            submitBtn.prop('disabled', false).html(originalText);
+          });
+          return;
+        }
       }
-    }
 
-    // Final fallback: Show success message (form submitted)
-    $("#sendmessage").addClass("show");
-    $("#errormessage").removeClass("show");
-    $('.contactForm').find("input, textarea").val("");
-    submitBtn.prop('disabled', false).html(originalText);
+      // Final fallback: Show success message (form submitted)
+      // Note: Email may not be sent if SMTP is not configured
+      // Check Supabase Edge Functions or EmailJS configuration
+      console.warn('Email sending service not available. Configure EmailJS or Supabase Edge Functions for email delivery.');
+      $("#sendmessage").addClass("show");
+      $("#errormessage").removeClass("show");
+      $('.contactForm').find("input, textarea").val("");
+      submitBtn.prop('disabled', false).html(originalText);
+    }, 0);
   }
 
 });

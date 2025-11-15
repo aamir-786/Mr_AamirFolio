@@ -218,7 +218,7 @@ const ProjectManager = {
       }
 
       container.innerHTML = this.projects.map((project, index) => `
-        <div class="item-card">
+        <div class="item-card" data-project-id="${project.id || index}">
           <img src="${project.image}" alt="${project.title}" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Crect width=\'200\' height=\'200\' fill=\'%23f0f0f0\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23999\' font-family=\'Arial\' font-size=\'14\'%3ENo Image%3C/text%3E%3C/svg%3E'">
           <h4>${project.title}</h4>
           <div class="item-meta">
@@ -226,15 +226,32 @@ const ProjectManager = {
             <strong>Date:</strong> ${project.date}
           </div>
           <div class="item-actions">
-            <button class="btn btn-sm btn-primary" onclick="ProjectManager.editProject(${project.id || index})">
+            <button class="btn btn-sm btn-primary edit-project-btn" data-project-id="${project.id || index}">
               <i class="ion-edit"></i> Edit
             </button>
-            <button class="btn btn-sm btn-danger" onclick="ProjectManager.deleteProject(${project.id || index})">
+            <button class="btn btn-sm btn-danger delete-project-btn" data-project-id="${project.id || index}">
               <i class="ion-trash-a"></i> Delete
             </button>
           </div>
         </div>
       `).join('');
+      
+      // Add event listeners using event delegation
+      container.querySelectorAll('.edit-project-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const projectId = btn.getAttribute('data-project-id');
+          this.editProject(projectId);
+        });
+      });
+      
+      container.querySelectorAll('.delete-project-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const projectId = btn.getAttribute('data-project-id');
+          this.deleteProject(projectId);
+        });
+      });
     } catch (error) {
       console.error('Error loading projects:', error);
       container.innerHTML = `
@@ -479,16 +496,49 @@ const ProjectManager = {
 
   // Delete project
   deleteProject: async function(id) {
-    if (!confirm('Are you sure you want to delete this project?')) {
+    // Non-blocking confirmation
+    const confirmed = await new Promise((resolve) => {
+      setTimeout(() => resolve(confirm('Are you sure you want to delete this project?')), 0);
+    });
+    
+    if (!confirmed) {
       return;
     }
 
-    const result = await SupabaseService.deleteProject(id);
+    // Find and update the button to show loading state
+    const button = document.querySelector(`.delete-project-btn[data-project-id="${id}"]`);
+    const originalText = button ? button.innerHTML : '';
     
-    if (result.success) {
-      this.loadProjects();
-    } else {
-      alert('Error deleting project: ' + (result.error || 'Unknown error'));
+    if (button) {
+      button.disabled = true;
+      button.innerHTML = '<i class="ion-loading-a"></i> Deleting...';
+    }
+
+    try {
+      // Use setTimeout to ensure UI updates
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      const result = await SupabaseService.deleteProject(id);
+      
+      if (result.success) {
+        // Reload projects after a short delay to allow UI to update
+        setTimeout(() => {
+          this.loadProjects();
+        }, 100);
+      } else {
+        alert('Error deleting project: ' + (result.error || 'Unknown error'));
+        if (button) {
+          button.disabled = false;
+          button.innerHTML = originalText;
+        }
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert('Error deleting project: ' + (error.message || 'Unknown error'));
+      if (button) {
+        button.disabled = false;
+        button.innerHTML = originalText;
+      }
     }
   }
 };
@@ -517,7 +567,7 @@ const ReviewManager = {
       }
 
       container.innerHTML = this.reviews.map((review, index) => `
-        <div class="review-card">
+        <div class="review-card" data-review-id="${review.id || index}">
           <div class="author-info">
             <img src="${review.image}" alt="${review.author}" onerror="this.src='img/testimonial-2.jpg'">
             <div>
@@ -526,15 +576,32 @@ const ReviewManager = {
           </div>
           <div class="review-text">${review.text}</div>
           <div class="item-actions mt-3">
-            <button class="btn btn-sm btn-primary" onclick="ReviewManager.editReview(${review.id || index})">
+            <button class="btn btn-sm btn-primary edit-review-btn" data-review-id="${review.id || index}">
               <i class="ion-edit"></i> Edit
             </button>
-            <button class="btn btn-sm btn-danger" onclick="ReviewManager.deleteReview(${review.id || index})">
+            <button class="btn btn-sm btn-danger delete-review-btn" data-review-id="${review.id || index}">
               <i class="ion-trash-a"></i> Delete
             </button>
           </div>
         </div>
       `).join('');
+      
+      // Add event listeners using event delegation
+      container.querySelectorAll('.edit-review-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const reviewId = btn.getAttribute('data-review-id');
+          this.editReview(reviewId);
+        });
+      });
+      
+      container.querySelectorAll('.delete-review-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const reviewId = btn.getAttribute('data-review-id');
+          this.deleteReview(reviewId);
+        });
+      });
     } catch (error) {
       console.error('Error loading reviews:', error);
       container.innerHTML = `
@@ -603,16 +670,49 @@ const ReviewManager = {
 
   // Delete review
   deleteReview: async function(id) {
-    if (!confirm('Are you sure you want to delete this review?')) {
+    // Non-blocking confirmation
+    const confirmed = await new Promise((resolve) => {
+      setTimeout(() => resolve(confirm('Are you sure you want to delete this review?')), 0);
+    });
+    
+    if (!confirmed) {
       return;
     }
 
-    const result = await SupabaseService.deleteReview(id);
+    // Find and update the button to show loading state
+    const button = document.querySelector(`.delete-review-btn[data-review-id="${id}"]`);
+    const originalText = button ? button.innerHTML : '';
     
-    if (result.success) {
-      this.loadReviews();
-    } else {
-      alert('Error deleting review: ' + (result.error || 'Unknown error'));
+    if (button) {
+      button.disabled = true;
+      button.innerHTML = '<i class="ion-loading-a"></i> Deleting...';
+    }
+
+    try {
+      // Use setTimeout to ensure UI updates
+      await new Promise(resolve => setTimeout(resolve, 0));
+      
+      const result = await SupabaseService.deleteReview(id);
+      
+      if (result.success) {
+        // Reload reviews after a short delay to allow UI to update
+        setTimeout(() => {
+          this.loadReviews();
+        }, 100);
+      } else {
+        alert('Error deleting review: ' + (result.error || 'Unknown error'));
+        if (button) {
+          button.disabled = false;
+          button.innerHTML = originalText;
+        }
+      }
+    } catch (error) {
+      console.error('Delete error:', error);
+      alert('Error deleting review: ' + (error.message || 'Unknown error'));
+      if (button) {
+        button.disabled = false;
+        button.innerHTML = originalText;
+      }
     }
   }
 };
