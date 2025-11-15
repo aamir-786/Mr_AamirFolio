@@ -2,6 +2,12 @@
 (function() {
   'use strict';
 
+  // Store all projects globally for filtering
+  let allProjects = [];
+  let currentFilter = 'all';
+  let displayedCount = 6; // Initial number of projects to show
+  const PROJECTS_PER_PAGE = 6; // Projects to show per "See More" click
+
   // Get projects from Supabase
   async function getProjects() {
     if (typeof SupabaseService !== 'undefined') {
@@ -30,6 +36,182 @@
     return SupabaseService ? SupabaseService.getDefaultReviews() : [];
   }
 
+  // Load categories for filter
+  async function loadCategories() {
+    try {
+      const response = await fetch('data/categories.json');
+      if (response.ok) {
+        const data = await response.json();
+        return data.categories || [];
+      }
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
+    // Fallback categories
+    return [
+      'Web Design',
+      'Software Engineering (Java)',
+      'Web Design + Python',
+      'Web Design + PHP',
+      'Java Programming',
+      'Software Engineering',
+      'Web Development',
+      'Responsive Design'
+    ];
+  }
+
+  // Render category filter buttons
+  async function renderCategoryFilters() {
+    const filterContainer = document.getElementById('portfolio-filter');
+    if (!filterContainer) return;
+
+    const categories = await loadCategories();
+    
+    // Get unique categories from projects
+    const projectCategories = [...new Set(allProjects.map(p => p.category))].sort();
+    
+    // Use project categories if available, otherwise use JSON categories
+    const categoriesToShow = projectCategories.length > 0 ? projectCategories : categories;
+    
+    // Add filter buttons for each category
+    const filterButtons = categoriesToShow.map(category => 
+      `<button class="filter-btn" data-filter="${category}">${category}</button>`
+    ).join('');
+    
+    // Insert after "All" button
+    const allButton = filterContainer.querySelector('[data-filter="all"]');
+    if (allButton) {
+      allButton.insertAdjacentHTML('afterend', filterButtons);
+    }
+    
+    // Add click handlers to filter buttons
+    filterContainer.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        // Update active state
+        filterContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        
+        // Apply filter
+        currentFilter = this.getAttribute('data-filter');
+        displayedCount = 6; // Reset to initial count
+        displayProjects();
+      });
+    });
+  }
+
+  // Filter projects by category
+  function getFilteredProjects() {
+    if (currentFilter === 'all') {
+      return allProjects;
+    }
+    return allProjects.filter(project => project.category === currentFilter);
+  }
+
+  // Render a single project card
+  function renderProjectCard(project) {
+    // Truncate title if too long
+    const maxTitleLength = 50;
+    const displayTitle = project.title.length > maxTitleLength 
+      ? project.title.substring(0, maxTitleLength) + '...' 
+      : project.title;
+    
+    // Truncate category if too long
+    const maxCategoryLength = 30;
+    const displayCategory = project.category.length > maxCategoryLength 
+      ? project.category.substring(0, maxCategoryLength) + '...' 
+      : project.category;
+    
+    // Get description (if exists) or use category as description
+    const description = project.description || project.category || '';
+    const maxDescLength = 100;
+    const shortDescription = description.length > maxDescLength 
+      ? description.substring(0, maxDescLength) + '...' 
+      : description;
+    const hasMore = description.length > maxDescLength;
+    
+    return `
+      <div class="col-md-4 project-item" data-category="${project.category}">
+        <div class="work-box">
+          <a href="${project.image}" data-lightbox="gallery-mf" data-title="${project.title}">
+            <div class="work-img">
+              <img src="${project.image}" alt="${project.title}" class="img-fluid" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Crect width=\'200\' height=\'200\' fill=\'%23f0f0f0\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23999\' font-family=\'Arial\' font-size=\'14\'%3ENo Image%3C/text%3E%3C/svg%3E'">
+            </div>
+          </a>
+          <div class="work-content">
+            <div class="row">
+              <div class="col-sm-8">
+                <h2 class="w-title" title="${project.title}">${displayTitle}</h2>
+                <div class="w-more">
+                  <span class="w-ctegory" title="${project.category}">${displayCategory}</span> / <span class="w-date">${project.date}</span>
+                </div>
+              </div>
+              <div class="col-sm-4">
+                <div class="w-like">
+                  <span class="ion-ios-plus-outline"></span>
+                </div>
+              </div>
+            </div>
+            ${description ? `
+            <div class="row">
+              <div class="col-12">
+                <p class="w-description">${shortDescription}</p>
+                ${hasMore ? `<a href="project-details.html?id=${project.id}" class="read-more-link">Read More</a>` : ''}
+              </div>
+            </div>
+            ` : ''}
+            <div class="row">
+              <div class="col-12">
+                <a href="${project.url || 'https://github.com/aamir-786'}" target="_blank" class="btn-go-live">Go Live</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Display projects with filtering and pagination
+  function displayProjects() {
+    const container = document.getElementById('projects-container');
+    const seeMoreContainer = document.getElementById('see-more-container');
+    const seeMoreBtn = document.getElementById('see-more-btn');
+    
+    if (!container) return;
+
+    // Get filtered projects
+    const filteredProjects = getFilteredProjects();
+    
+    if (filteredProjects.length === 0) {
+      container.innerHTML = '<div class="col-12 text-center"><p>No projects found in this category.</p></div>';
+      if (seeMoreContainer) seeMoreContainer.style.display = 'none';
+      return;
+    }
+
+    // Get projects to display (limited by displayedCount)
+    const projectsToShow = filteredProjects.slice(0, displayedCount);
+    
+    // Render project cards
+    container.innerHTML = projectsToShow.map(project => renderProjectCard(project)).join('');
+
+    // Show/hide "See More" button
+    if (seeMoreContainer && seeMoreBtn) {
+      if (displayedCount < filteredProjects.length) {
+        seeMoreContainer.style.display = 'block';
+        seeMoreBtn.textContent = `See More (${filteredProjects.length - displayedCount} remaining)`;
+      } else {
+        seeMoreContainer.style.display = 'none';
+      }
+    }
+
+    // Reinitialize lightbox for new images
+    if (typeof lightbox !== 'undefined') {
+      lightbox.option({
+        'resizeDuration': 200,
+        'wrapAround': true
+      });
+    }
+  }
+
   // Load projects into the page
   async function loadProjects() {
     const container = document.getElementById('projects-container');
@@ -39,82 +221,34 @@
     container.innerHTML = '<div class="col-12 text-center p-4"><i class="ion-loading-a"></i> Loading projects...</div>';
 
     try {
-      const projects = await getProjects();
+      allProjects = await getProjects();
       
-      if (projects.length === 0) {
+      if (allProjects.length === 0) {
         container.innerHTML = '<div class="col-12 text-center"><p>No projects available at the moment.</p></div>';
         return;
       }
 
-      container.innerHTML = projects.map(project => {
-        // Truncate title if too long
-        const maxTitleLength = 50;
-        const displayTitle = project.title.length > maxTitleLength 
-          ? project.title.substring(0, maxTitleLength) + '...' 
-          : project.title;
-        
-        // Truncate category if too long
-        const maxCategoryLength = 30;
-        const displayCategory = project.category.length > maxCategoryLength 
-          ? project.category.substring(0, maxCategoryLength) + '...' 
-          : project.category;
-        
-        // Get description (if exists) or use category as description
-        const description = project.description || project.category || '';
-        const maxDescLength = 100;
-        const shortDescription = description.length > maxDescLength 
-          ? description.substring(0, maxDescLength) + '...' 
-          : description;
-        const hasMore = description.length > maxDescLength;
-        
-        return `
-        <div class="col-md-4">
-          <div class="work-box">
-            <a href="${project.image}" data-lightbox="gallery-mf" data-title="${project.title}">
-              <div class="work-img">
-                <img src="${project.image}" alt="${project.title}" class="img-fluid" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Crect width=\'200\' height=\'200\' fill=\'%23f0f0f0\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23999\' font-family=\'Arial\' font-size=\'14\'%3ENo Image%3C/text%3E%3C/svg%3E'">
-              </div>
-            </a>
-            <div class="work-content">
-              <div class="row">
-                <div class="col-sm-8">
-                  <h2 class="w-title" title="${project.title}">${displayTitle}</h2>
-                  <div class="w-more">
-                    <span class="w-ctegory" title="${project.category}">${displayCategory}</span> / <span class="w-date">${project.date}</span>
-                  </div>
-                </div>
-                <div class="col-sm-4">
-                  <div class="w-like">
-                    <span class="ion-ios-plus-outline"></span>
-                  </div>
-                </div>
-              </div>
-              ${description ? `
-              <div class="row">
-                <div class="col-12">
-                  <p class="w-description">${shortDescription}</p>
-                  ${hasMore ? `<a href="project-details.html?id=${project.id}" class="read-more-link">Read More</a>` : ''}
-                </div>
-              </div>
-              ` : ''}
-              <div class="row">
-                <div class="col-12">
-                  <a href="${project.url || 'https://github.com/aamir-786'}" target="_blank" class="btn-go-live">Go Live</a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-      }).join('');
-
-      // Reinitialize lightbox for new images
-      if (typeof lightbox !== 'undefined') {
-        lightbox.option({
-          'resizeDuration': 200,
-          'wrapAround': true
+      // Render category filters
+      await renderCategoryFilters();
+      
+      // Display initial projects (6 projects)
+      displayedCount = 6;
+      displayProjects();
+      
+      // Setup "See More" button handler
+      const seeMoreBtn = document.getElementById('see-more-btn');
+      if (seeMoreBtn) {
+        seeMoreBtn.addEventListener('click', function() {
+          displayedCount += PROJECTS_PER_PAGE;
+          displayProjects();
+          
+          // Scroll to see more button after adding projects
+          setTimeout(() => {
+            seeMoreBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }, 100);
         });
       }
+      
     } catch (error) {
       console.error('Error loading projects:', error);
       container.innerHTML = '<div class="col-12 text-center"><p class="text-danger">Error loading projects. Please try again later.</p></div>';

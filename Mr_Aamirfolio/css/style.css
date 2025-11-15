@@ -878,6 +878,66 @@ a:hover {
   background-color: #8a1f2f;
 }
 
+/*======================================
+//--//-->   PORTFOLIO FILTER
+======================================*/
+
+.portfolio-filter {
+  margin-bottom: 30px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.filter-btn {
+  background-color: transparent;
+  color: #4e4e4e;
+  border: 2px solid #680e20;
+  padding: 10px 25px;
+  margin: 5px;
+  border-radius: 25px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: capitalize;
+}
+
+.filter-btn:hover {
+  background-color: #680e20;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(104, 14, 32, 0.3);
+}
+
+.filter-btn.active {
+  background-color: #680e20;
+  color: #fff;
+  border-color: #680e20;
+}
+
+.filter-btn.active:hover {
+  background-color: #8a1f2f;
+  border-color: #8a1f2f;
+}
+
+/* Hide project items initially if needed for animations */
+.project-item {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 
 
 /*======================================
