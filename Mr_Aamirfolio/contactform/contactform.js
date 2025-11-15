@@ -26,7 +26,7 @@ jQuery(document).ready(function($) {
 
         switch (rule) {
           case 'required':
-            if (i.val() === '') {
+            if (i.val() === '' || !i.val().trim()) {
               ferror = ierror = true;
             }
             break;
@@ -36,7 +36,9 @@ jQuery(document).ready(function($) {
             }
             break;
           case 'email':
-            if (!emailExp.test(i.val())) {
+            if (i.val() === '' || !i.val().trim()) {
+              ferror = ierror = true;
+            } else if (!emailExp.test(i.val())) {
               ferror = ierror = true;
             }
             break;
@@ -73,7 +75,7 @@ jQuery(document).ready(function($) {
 
         switch (rule) {
           case 'required':
-            if (i.val() === '') {
+            if (i.val() === '' || !i.val().trim()) {
               ferror = ierror = true;
             }
             break;
@@ -112,22 +114,26 @@ jQuery(document).ready(function($) {
 
   // Save contact message to Supabase database
   function saveContactMessage(name, email, subject, message, submitBtn, originalText) {
-    // Check if Supabase is available
-    if (typeof SupabaseService === 'undefined') {
-      // Supabase not available - show success anyway
-      $("#sendmessage").addClass("show");
-      $("#errormessage").removeClass("show");
-      $('.contactForm').find("input, textarea").val("");
-      submitBtn.prop('disabled', false).html(originalText);
-      return;
+    // Get Supabase client - use public/anonymous client for contact form
+    let client = null;
+    
+    // Try to get public client (anon key) - contact form should work without authentication
+    if (typeof supabase !== 'undefined') {
+      const supabaseUrl = (window.CONFIG && window.CONFIG.SUPABASE_URL) || 'https://ruafgiyldwlctfldhtoe.supabase.co';
+      const anonKey = (window.CONFIG && window.CONFIG.SUPABASE_ANON_KEY) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1YWZnaXlsZHdsY3RmbGRodG9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxODk2MjMsImV4cCI6MjA3ODc2NTYyM30.w8DciDV8BwkJDtwPBP2qgn9E6Kr6s4iich5gfAQx6XM';
+      client = supabase.createClient(supabaseUrl, anonKey);
     }
-
-    const client = SupabaseService.getClient();
+    
+    // Fallback to SupabaseService if available
+    if (!client && typeof SupabaseService !== 'undefined') {
+      client = SupabaseService.getClient();
+    }
+    
     if (!client) {
-      // Supabase client not available - show success anyway
-      $("#sendmessage").addClass("show");
-      $("#errormessage").removeClass("show");
-      $('.contactForm').find("input, textarea").val("");
+      // Supabase client not available - show error
+      console.error('Supabase client not available');
+      $("#errormessage").html('Error: Unable to connect to server. Please try again later.').addClass("show");
+      $("#sendmessage").removeClass("show");
       submitBtn.prop('disabled', false).html(originalText);
       return;
     }
@@ -156,10 +162,19 @@ jQuery(document).ready(function($) {
     
     // Insert into database
     client.from('contact_messages').insert(insertData)
+      .select()
       .then(function(response) {
         if (response.error) {
           console.error('Error saving message:', response.error);
-          $("#errormessage").addClass("show");
+          let errorMsg = 'Error: ' + (response.error.message || 'Failed to send message.');
+          
+          // Check if it's an RLS error
+          if (response.error.message && response.error.message.includes('row-level security')) {
+            errorMsg += '<br><br><strong>Database Setup Required:</strong><br>';
+            errorMsg += 'Run FIX-CONTACT-FORM.sql in Supabase SQL Editor';
+          }
+          
+          $("#errormessage").html(errorMsg).addClass("show");
           $("#sendmessage").removeClass("show");
           submitBtn.prop('disabled', false).html(originalText);
         } else {
@@ -172,7 +187,15 @@ jQuery(document).ready(function($) {
       })
       .catch(function(error) {
         console.error('Error saving to database:', error);
-        $("#errormessage").addClass("show");
+        let errorMsg = 'Error: ' + (error.message || 'Failed to send message.');
+        
+        // Check if it's an RLS error
+        if (error.message && error.message.includes('row-level security')) {
+          errorMsg += '<br><br><strong>Database Setup Required:</strong><br>';
+          errorMsg += 'Run FIX-CONTACT-FORM.sql in Supabase SQL Editor';
+        }
+        
+        $("#errormessage").html(errorMsg).addClass("show");
         $("#sendmessage").removeClass("show");
         submitBtn.prop('disabled', false).html(originalText);
       });

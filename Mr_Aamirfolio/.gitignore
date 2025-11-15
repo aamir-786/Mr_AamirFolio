@@ -30,3 +30,25 @@ build/
 *.tmp
 *.temp
 
+# Large files and executables
+*.exe
+*.zip
+*.rar
+*.7z
+*.dmg
+*.pkg
+*.deb
+*.rpm
+
+# Large installation files
+*hMailServer*.exe
+*httrack*.exe
+*python*.exe
+*Smtp4dev*.zip
+
+# Document files (if too large)
+*.docx
+*.pdf
+*.ppt
+*.pptx
+

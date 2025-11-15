@@ -1,0 +1,21 @@
+HTTrack3.49-2+htsswf+htsjava launched on Wed, 09 Jul 2025 13:02:44 at http://sibagrades.iba-suk.edu.pk:86/Default.aspx +*.png +*.gif +*.jpg +*.jpeg +*.css +*.js -ad.doubleclick.net/* -mime:application/foobar
+(winhttrack -qwC2%Ps2u1%s%uN0%I0p3DaK0H0%kf2A25000%f#f -F "Mozilla/4.5 (compatible; HTTrack 3.0x; Windows 98)" -%F "<!-- Mirrored from %s%s by HTTrack Website Copier/3.x [XR&CO'2014], %s -->" -%l "en, *" http://sibagrades.iba-suk.edu.pk:86/Default.aspx -O1 "D:\Mr_AamirFolio\CMS-SIBA" +*.png +*.gif +*.jpg +*.jpeg +*.css +*.js -ad.doubleclick.net/* -mime:application/foobar )
+
+Information, Warnings and Errors reported for this mirror:
+note:	the hts-log.txt file, and hts-cache folder, may contain sensitive information,
+	such as username/password authentication for websites mirrored in this project
+	do not share these files/folders if you want these information to remain private
+
+13:02:47	Warning: 	file not stored in cache due to bogus state (incomplete type with OK (200), size 0): sibagrades.iba-suk.edu.pk:86/Resources/_themes/default.css
+13:02:57	Error: 	"Not Found" (404) at link sibagrades.iba-suk.edu.pk:86/Resources/_scripts/jquery.fullcalendar/fullcalendar.css (from sibagrades.iba-suk.edu.pk:86/Default.aspx)
+13:02:57	Error: 	"Not Found" (404) at link sibagrades.iba-suk.edu.pk:86/Resources/_scripts/jquery.fullcalendar/fullcalendar.print.css (from sibagrades.iba-suk.edu.pk:86/Default.aspx)
+13:02:57	Error: 	"Not Found" (404) at link sibagrades.iba-suk.edu.pk:86/Resources/_layout/scripts/jquery.uniform/uniform.default.css (from sibagrades.iba-suk.edu.pk:86/Default.aspx)
+13:02:57	Error: 	"Not Found" (404) at link sibagrades.iba-suk.edu.pk:86/Resources/_layout/scripts/jquery.ui/ui-lightness/jquery-ui-1.8.18.custom.css (from sibagrades.iba-suk.edu.pk:86/Default.aspx)
+13:02:57	Error: 	"Not Found" (404) at link sibagrades.iba-suk.edu.pk:86/Resources/_layout/scripts/css3-mediaqueries.js (from sibagrades.iba-suk.edu.pk:86/Default.aspx)
+13:02:57	Error: 	"Not Found" (404) at link sibagrades.iba-suk.edu.pk:86/Resources/_layout/scripts/jquery.uniform/jquery.uniform.min.js (from sibagrades.iba-suk.edu.pk:86/Default.aspx)
+13:02:58	Error: 	"Not Found" (404) at link sibagrades.iba-suk.edu.pk:86/Resources/_layout/images/back-navigation-tab-active2.png (from sibagrades.iba-suk.edu.pk:86/Resources/_layout/style.css)
+13:02:58	Error: 	"Not Found" (404) at link sibagrades.iba-suk.edu.pk:86/Resources/images/back-screencast.png (from sibagrades.iba-suk.edu.pk:86/Resources/_layout/style.css)
+13:02:58	Error: 	"Not Found" (404) at link sibagrades.iba-suk.edu.pk:86/Resources/_layout/images/back-panel-title.png (from sibagrades.iba-suk.edu.pk:86/Resources/_layout/style.css)
+
+HTTrack Website Copier/3.49-2 mirror complete in 14 seconds : 40 links scanned, 30 files written (197917 bytes overall) [220985 bytes received at 15784 bytes/sec]
+(9 errors, 1 warnings, 0 messages)

@@ -1345,13 +1345,18 @@ footer .credits a {
 ======================================*/
 
 #sendmessage {
-  color: #680e20;
-  border: 1px solid #680e20;
+  color: #28a745;
+  border: 2px solid #28a745;
+  background-color: #d4edda;
   display: none;
   text-align: center;
   padding: 15px;
   font-weight: 600;
   margin-bottom: 15px;
+  border-radius: 5px;
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
 }
 
 #errormessage {
@@ -1364,10 +1369,27 @@ footer .credits a {
   margin-bottom: 15px;
 }
 
-#sendmessage.show,
+#sendmessage.show {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+  animation: slideDownFadeIn 0.5s ease-out;
+}
+
 #errormessage.show,
 .show {
   display: block;
+}
+
+@keyframes slideDownFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .validation {
