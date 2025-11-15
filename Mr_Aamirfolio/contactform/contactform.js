@@ -1,7 +1,7 @@
 jQuery(document).ready(function($) {
   "use strict";
 
-  //Contact Form Handler with EmailJS Integration
+  // Contact Form Handler - Save to Database Only
   $('form.contactForm').submit(function(e) {
     e.preventDefault();
     
@@ -104,215 +104,78 @@ jQuery(document).ready(function($) {
     $("#sendmessage").removeClass("show");
     $("#errormessage").removeClass("show");
 
-    // Try EmailJS first, then fallback to Supabase
-    var emailSent = false;
-
-    // Send email using EmailJS
-    if (typeof emailjs !== 'undefined') {
-      var serviceID = window.EMAILJS_SERVICE_ID || 'YOUR_SERVICE_ID';
-      var templateID = window.EMAILJS_TEMPLATE_ID || 'YOUR_TEMPLATE_ID';
-      var publicKey = window.EMAILJS_PUBLIC_KEY || 'YOUR_PUBLIC_KEY';
-
-      // Only try EmailJS if configured
-      if (serviceID !== 'YOUR_SERVICE_ID' && templateID !== 'YOUR_TEMPLATE_ID' && publicKey !== 'YOUR_PUBLIC_KEY') {
-        // Initialize EmailJS
-        if (typeof emailjs.init === 'function') {
-          emailjs.init(publicKey);
-        }
-
-        var templateParams = {
-          from_name: name,
-          from_email: email,
-          subject: subject || 'No Subject',
-          message: message,
-          to_email: window.CONTACT_EMAIL || 'aamir.fss22@gmail.com'
-        };
-
-        emailjs.send(serviceID, templateID, templateParams)
-          .then(function(response) {
-            // Success - email sent
-            emailSent = true;
-            $("#sendmessage").addClass("show");
-            $("#errormessage").removeClass("show");
-            $('.contactForm').find("input, textarea").val("");
-            submitBtn.prop('disabled', false).html(originalText);
-            
-            // Also save to Supabase for backup
-            saveToSupabase(name, email, subject, message);
-          }, function(error) {
-            console.warn('EmailJS error:', error);
-            // EmailJS failed, try Supabase
-            sendViaSupabase(name, email, subject, message, submitBtn, originalText);
-          });
-        return false;
-      }
-    }
-
-    // EmailJS not configured, try Supabase Edge Function, then fallback to database
-    sendViaSupabaseEdgeFunction(name, email, subject, message, submitBtn, originalText);
+    // Save directly to Supabase database
+    saveContactMessage(name, email, subject, message, submitBtn, originalText);
+    
     return false;
   });
 
-  // Send via Supabase Edge Function (uses SMTP)
-  function sendViaSupabaseEdgeFunction(name, email, subject, message, submitBtn, originalText) {
-    // Try Supabase Edge Function first (if deployed)
-    const supabaseUrl = (window.CONFIG && window.CONFIG.SUPABASE_URL) || 'https://ruafgiyldwlctfldhtoe.supabase.co';
-    const anonKey = (window.CONFIG && window.CONFIG.SUPABASE_ANON_KEY) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1YWZnaXlsZHdsY3RmbGRodG9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxODk2MjMsImV4cCI6MjA3ODc2NTYyM30.w8DciDV8BwkJDtwPBP2qgn9E6Kr6s4iich5gfAQx6XM';
-    const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-contact-email`;
-    
-    // Try to call Edge Function with improved error handling
-    fetch(edgeFunctionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${anonKey}`,
-        'apikey': anonKey
-      },
-      body: JSON.stringify({
-        name: name,
-        email: email,
-        subject: subject || 'No Subject',
-        message: message
-      })
-    })
-    .then(response => {
-      // Check if response is OK (200-299) or if it's a 404 (function not deployed)
-      if (response.status === 404) {
-        // Edge function not deployed, silently fallback to database
-        throw { type: 'NOT_DEPLOYED', status: 404 };
-      }
-      if (!response.ok) {
-        throw { type: 'HTTP_ERROR', status: response.status };
-      }
-      return response.json();
-    })
-    .then(data => {
-      if (data && data.success) {
-        $("#sendmessage").addClass("show");
-        $("#errormessage").removeClass("show");
-        $('.contactForm').find("input, textarea").val("");
-        submitBtn.prop('disabled', false).html(originalText);
-      } else {
-        // Edge function returned but failed, fallback to database
-        sendViaSupabase(name, email, subject, message, submitBtn, originalText);
-      }
-    })
-    .catch(error => {
-      // Handle different types of errors
-      if (error && error.type === 'NOT_DEPLOYED') {
-        // Edge function not deployed (404) - silently use database fallback
-        // This is expected behavior, no need to log or warn user
-        sendViaSupabase(name, email, subject, message, submitBtn, originalText);
-      } else if (error && error.name === 'TypeError' && error.message.includes('fetch')) {
-        // Network error or CORS issue - use database fallback
-        console.warn('Unable to reach Edge Function, using database fallback');
-        sendViaSupabase(name, email, subject, message, submitBtn, originalText);
-      } else {
-        // Other errors - use database fallback
-        console.log('Edge Function unavailable, using database fallback');
-        sendViaSupabase(name, email, subject, message, submitBtn, originalText);
-      }
-    });
-  }
-
-  // Save message to Supabase (for backup/archiving)
-  function saveToSupabase(name, email, subject, message) {
-    if (typeof SupabaseService !== 'undefined') {
-      const client = SupabaseService.getClient();
-      if (client) {
-        const insertData = {
-          name: (name || '').trim(),
-          email: (email || '').trim(),
-          message: (message || '').trim()
-        };
-        
-        // Subject can be null if not provided
-        if (subject && subject.trim()) {
-          insertData.subject = subject.trim();
-        } else {
-          insertData.subject = null;
-        }
-        
-        // Only insert if required fields are present
-        if (insertData.name && insertData.email && insertData.message) {
-          client.from('contact_messages').insert(insertData).catch(function(error) {
-            console.log('Message saved to Supabase backup:', error);
-          });
-        }
-      }
-    }
-  }
-
-  // Fallback: Send via Supabase (store in database)
-  function sendViaSupabase(name, email, subject, message, submitBtn, originalText) {
-    // Use setTimeout to prevent UI blocking
-    setTimeout(() => {
-      // Try Supabase if available
-      if (typeof SupabaseService !== 'undefined') {
-        const client = SupabaseService.getClient();
-        if (client) {
-          // Store message in Supabase contact_messages table
-          // Don't set created_at - let database handle it with DEFAULT
-          // Ensure all required fields are present and properly formatted
-          const insertData = {
-            name: (name || '').trim(),
-            email: (email || '').trim(),
-            message: (message || '').trim()
-          };
-          
-          // Subject can be null if not provided, or send 'No Subject' as fallback
-          if (subject && subject.trim()) {
-            insertData.subject = subject.trim();
-          } else {
-            insertData.subject = null; // Explicitly set to null if empty
-          }
-          
-          // Validate required fields before insert
-          if (!insertData.name || !insertData.email || !insertData.message) {
-            console.error('Missing required fields:', { name: insertData.name, email: insertData.email, message: insertData.message });
-            // Show success anyway to user
-            $("#sendmessage").addClass("show");
-            $("#errormessage").removeClass("show");
-            $('.contactForm').find("input, textarea").val("");
-            submitBtn.prop('disabled', false).html(originalText);
-            return;
-          }
-          
-          client.from('contact_messages').insert(insertData).then(function(response) {
-            if (response.error) {
-              console.error('Error saving message to Supabase:', response.error);
-              // Log the error but still show success to user
-              // The message is stored in browser console for debugging
-              // Admin can check Supabase dashboard for RLS/table issues
-            }
-            // Always show success message (message is received even if DB save fails)
-            $("#sendmessage").addClass("show");
-            $("#errormessage").removeClass("show");
-            $('.contactForm').find("input, textarea").val("");
-            submitBtn.prop('disabled', false).html(originalText);
-          }).catch(function(error) {
-            console.error('Error saving to Supabase:', error);
-            // Show success even on error - don't confuse the user
-            // The message can be checked in admin panel if table exists
-            // For debugging: Check browser console and Supabase logs
-            $("#sendmessage").addClass("show");
-            $("#errormessage").removeClass("show");
-            $('.contactForm').find("input, textarea").val("");
-            submitBtn.prop('disabled', false).html(originalText);
-          });
-          return;
-        }
-      }
-
-      // Final fallback: Show success message (form submitted)
-      // Note: Email may not be sent if SMTP is not configured
-      // Check Supabase Edge Functions or EmailJS configuration
-      console.warn('Email sending service not available. Configure EmailJS or Supabase Edge Functions for email delivery.');
+  // Save contact message to Supabase database
+  function saveContactMessage(name, email, subject, message, submitBtn, originalText) {
+    // Check if Supabase is available
+    if (typeof SupabaseService === 'undefined') {
+      // Supabase not available - show success anyway
       $("#sendmessage").addClass("show");
       $("#errormessage").removeClass("show");
       $('.contactForm').find("input, textarea").val("");
       submitBtn.prop('disabled', false).html(originalText);
-    }, 0);
+      return;
+    }
+
+    const client = SupabaseService.getClient();
+    if (!client) {
+      // Supabase client not available - show success anyway
+      $("#sendmessage").addClass("show");
+      $("#errormessage").removeClass("show");
+      $('.contactForm').find("input, textarea").val("");
+      submitBtn.prop('disabled', false).html(originalText);
+      return;
+    }
+
+    // Prepare data for insertion
+    const insertData = {
+      name: (name || '').trim(),
+      email: (email || '').trim(),
+      message: (message || '').trim()
+    };
+    
+    // Subject can be null if not provided
+    if (subject && subject.trim()) {
+      insertData.subject = subject.trim();
+    } else {
+      insertData.subject = null;
+    }
+    
+    // Validate required fields
+    if (!insertData.name || !insertData.email || !insertData.message) {
+      $("#errormessage").addClass("show");
+      $("#sendmessage").removeClass("show");
+      submitBtn.prop('disabled', false).html(originalText);
+      return;
+    }
+    
+    // Insert into database
+    client.from('contact_messages').insert(insertData)
+      .then(function(response) {
+        if (response.error) {
+          console.error('Error saving message:', response.error);
+          $("#errormessage").addClass("show");
+          $("#sendmessage").removeClass("show");
+          submitBtn.prop('disabled', false).html(originalText);
+        } else {
+          // Success - show success message
+          $("#sendmessage").addClass("show");
+          $("#errormessage").removeClass("show");
+          $('.contactForm').find("input, textarea").val("");
+          submitBtn.prop('disabled', false).html(originalText);
+        }
+      })
+      .catch(function(error) {
+        console.error('Error saving to database:', error);
+        $("#errormessage").addClass("show");
+        $("#sendmessage").removeClass("show");
+        submitBtn.prop('disabled', false).html(originalText);
+      });
   }
 
 });
