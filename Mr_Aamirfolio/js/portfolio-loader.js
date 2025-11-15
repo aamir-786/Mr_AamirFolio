@@ -1,0 +1,169 @@
+// Portfolio Data Loader - Loads projects and reviews dynamically
+(function() {
+  'use strict';
+
+  // Get projects from Supabase
+  async function getProjects() {
+    if (typeof SupabaseService !== 'undefined') {
+      try {
+        return await SupabaseService.getProjects();
+      } catch (error) {
+        console.error('Error fetching projects from Supabase:', error);
+        return SupabaseService.getDefaultProjects();
+      }
+    }
+    // Fallback to defaults if Supabase not available
+    return SupabaseService ? SupabaseService.getDefaultProjects() : [];
+  }
+
+  // Get reviews from Supabase
+  async function getReviews() {
+    if (typeof SupabaseService !== 'undefined') {
+      try {
+        return await SupabaseService.getReviews();
+      } catch (error) {
+        console.error('Error fetching reviews from Supabase:', error);
+        return SupabaseService.getDefaultReviews();
+      }
+    }
+    // Fallback to defaults if Supabase not available
+    return SupabaseService ? SupabaseService.getDefaultReviews() : [];
+  }
+
+  // Load projects into the page
+  async function loadProjects() {
+    const container = document.getElementById('projects-container');
+    if (!container) return;
+
+    // Show loading state
+    container.innerHTML = '<div class="col-12 text-center p-4"><i class="ion-loading-a"></i> Loading projects...</div>';
+
+    try {
+      const projects = await getProjects();
+      
+      if (projects.length === 0) {
+        container.innerHTML = '<div class="col-12 text-center"><p>No projects available at the moment.</p></div>';
+        return;
+      }
+
+      container.innerHTML = projects.map(project => `
+        <div class="col-md-4">
+          <div class="work-box">
+            <a href="${project.image}" data-lightbox="gallery-mf">
+              <div class="work-img">
+                <img src="${project.image}" alt="${project.title}" class="img-fluid" onerror="this.src='img/placeholder.png'">
+              </div>
+            </a>
+            <div class="work-content">
+              <div class="row">
+                <div class="col-sm-8">
+                  <h2 class="w-title">${project.title}</h2>
+                  <div class="w-more">
+                    <span class="w-ctegory">${project.category}</span> / <span class="w-date">${project.date}</span>
+                  </div>
+                </div>
+                <div class="col-sm-4">
+                  <div class="w-like">
+                    <span class="ion-ios-plus-outline"></span>
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-12">
+                  <a href="${project.url || 'https://github.com/aamir-786'}" target="_blank" class="btn-go-live">Go Live</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      // Reinitialize lightbox for new images
+      if (typeof lightbox !== 'undefined') {
+        lightbox.option({
+          'resizeDuration': 200,
+          'wrapAround': true
+        });
+      }
+    } catch (error) {
+      console.error('Error loading projects:', error);
+      container.innerHTML = '<div class="col-12 text-center"><p class="text-danger">Error loading projects. Please try again later.</p></div>';
+    }
+  }
+
+  // Load reviews into the page
+  async function loadReviews() {
+    const container = document.getElementById('testimonial-mf');
+    if (!container) return;
+
+    // Show loading state
+    container.innerHTML = '<div class="testimonial-box"><p><i class="ion-loading-a"></i> Loading reviews...</p></div>';
+
+    try {
+      const reviews = await getReviews();
+      
+      if (reviews.length === 0) {
+        container.innerHTML = '<div class="testimonial-box"><p>No reviews available at the moment.</p></div>';
+        return;
+      }
+
+      container.innerHTML = reviews.map(review => `
+        <div class="testimonial-box">
+          <div class="author-test">
+            <img src="${review.image}" alt="${review.author}" class="rounded-circle b-shadow-a" onerror="this.src='img/testimonial-2.jpg'">
+            <span class="author">${review.author}</span>
+          </div>
+          <div class="content-test">
+            <p class="description lead">
+              ${review.text}
+            </p>
+            <span class="comit"><i class="fa fa-quote-right"></i></span>
+          </div>
+        </div>
+      `).join('');
+
+      // Reinitialize owl carousel if it exists
+      if (typeof jQuery !== 'undefined' && jQuery('#testimonial-mf').length) {
+        // Destroy existing carousel if it exists
+        const carousel = jQuery('#testimonial-mf');
+        if (carousel.data('owl.carousel')) {
+          carousel.trigger('destroy.owl.carousel');
+        }
+        // Reinitialize
+        carousel.owlCarousel({
+          margin: 20,
+          autoplay: true,
+          autoplayTimeout: 4000,
+          autoplayHoverPause: true,
+          responsive: {
+            0: {
+              items: 1,
+            }
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error loading reviews:', error);
+      container.innerHTML = '<div class="testimonial-box"><p class="text-danger">Error loading reviews. Please try again later.</p></div>';
+    }
+  }
+
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      loadProjects();
+      loadReviews();
+    });
+  } else {
+    loadProjects();
+    loadReviews();
+  }
+
+  // Also load after a short delay to ensure all scripts are loaded
+  setTimeout(function() {
+    loadProjects();
+    loadReviews();
+  }, 500);
+
+})();
+

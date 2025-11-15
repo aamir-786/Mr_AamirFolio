@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Admin Dashboard - Mr_Aamir Portfolio</title>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  
+  <!-- Bootstrap CSS File -->
+  <link href="lib/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Libraries CSS Files -->
+  <link href="lib/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+  <link href="lib/ionicons/css/ionicons.min.css" rel="stylesheet">
+  
+  <!-- Main Stylesheet File -->
+  <link href="css/style.css" rel="stylesheet">
+  <link href="admin/admin.css" rel="stylesheet">
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="admin-nav">
+    <div class="container-fluid">
+      <div class="navbar-brand">Admin Dashboard</div>
+      <div class="nav-actions">
+        <a href="index.html" target="_blank" class="btn btn-sm btn-outline-light">
+          <i class="ion-eye"></i> View Portfolio
+        </a>
+        <button class="btn btn-sm btn-outline-light" onclick="AdminSystem.logout()">
+          <i class="ion-log-out"></i> Logout
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="admin-container">
+    <div class="sidebar">
+      <ul class="nav-menu">
+        <li><a href="#projects" class="nav-link active" data-section="projects">
+          <i class="ion-briefcase"></i> Projects
+        </a></li>
+        <li><a href="#reviews" class="nav-link" data-section="reviews">
+          <i class="ion-star"></i> Reviews
+        </a></li>
+        <li><a href="#settings" class="nav-link" data-section="settings">
+          <i class="ion-gear-a"></i> Settings
+        </a></li>
+      </ul>
+    </div>
+
+    <div class="admin-content">
+      <!-- Projects Section -->
+      <div id="projects-section" class="content-section active">
+        <div class="section-header">
+          <h2><i class="ion-briefcase"></i> Manage Projects</h2>
+          <button class="btn btn-primary" onclick="ProjectManager.showAddForm()">
+            <i class="ion-plus"></i> Add New Project
+          </button>
+        </div>
+        <div id="projects-list" class="items-list"></div>
+      </div>
+
+      <!-- Reviews Section -->
+      <div id="reviews-section" class="content-section">
+        <div class="section-header">
+          <h2><i class="ion-star"></i> Manage Reviews</h2>
+          <button class="btn btn-primary" onclick="ReviewManager.showAddForm()">
+            <i class="ion-plus"></i> Add New Review
+          </button>
+        </div>
+        <div id="reviews-list" class="items-list"></div>
+      </div>
+
+      <!-- Settings Section -->
+      <div id="settings-section" class="content-section">
+        <div class="section-header">
+          <h2><i class="ion-gear-a"></i> Settings</h2>
+        </div>
+        <div class="settings-content">
+          <div class="card">
+            <div class="card-header">
+              <h5>Change Admin Password</h5>
+            </div>
+            <div class="card-body">
+              <form id="changePasswordForm">
+                <div class="alert alert-info">
+                  <strong>Note:</strong> Password change is disabled for hardcoded admin account.<br>
+                  To change password, edit <code>ADMIN_PASSWORD</code> in <code>js/auth-service.js</code>
+                </div>
+                <div class="form-group">
+                  <label>Current Admin Email</label>
+                  <input type="text" class="form-control" value="admin@aamirfolio.com" readonly>
+                </div>
+                <div class="form-group">
+                  <label>Current Password</label>
+                  <input type="text" class="form-control" value="Admin@2024" readonly>
+                  <small class="form-text text-muted">Edit js/auth-service.js to change credentials</small>
+                </div>
+                <div id="passwordMessage" class="mt-3"></div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Project Modal -->
+  <div id="projectModal" class="modal fade" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Project Details</h5>
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="projectForm">
+            <input type="hidden" id="projectId">
+            <div class="form-group">
+              <label>Title *</label>
+              <input type="text" class="form-control" id="projectTitle" required>
+            </div>
+            <div class="form-group">
+              <label>Category *</label>
+              <input type="text" class="form-control" id="projectCategory" placeholder="e.g., Web Design, Java Programming" required>
+            </div>
+            <div class="form-group">
+              <label>Date *</label>
+              <input type="text" class="form-control" id="projectDate" placeholder="e.g., August 2024" required>
+            </div>
+            <div class="form-group">
+              <label>Image URL *</label>
+              <input type="text" class="form-control" id="projectImage" placeholder="e.g., img/tenis.png" required>
+            </div>
+            <div class="form-group">
+              <label>Live URL</label>
+              <input type="text" class="form-control" id="projectUrl" placeholder="https://github.com/aamir-786">
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="ProjectManager.saveProject()">Save Project</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Review Modal -->
+  <div id="reviewModal" class="modal fade" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Review Details</h5>
+          <button type="button" class="close" data-dismiss="modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="reviewForm">
+            <input type="hidden" id="reviewId">
+            <div class="form-group">
+              <label>Author Name *</label>
+              <input type="text" class="form-control" id="reviewAuthor" required>
+            </div>
+            <div class="form-group">
+              <label>Author Image URL *</label>
+              <input type="text" class="form-control" id="reviewImage" placeholder="e.g., img/testimonial-2.jpg" required>
+            </div>
+            <div class="form-group">
+              <label>Review Text *</label>
+              <textarea class="form-control" id="reviewText" rows="5" required></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" onclick="ReviewManager.saveReview()">Save Review</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Libraries -->
+  <script src="lib/jquery/jquery.min.js"></script>
+  <script src="lib/bootstrap/js/bootstrap.min.js"></script>
+  
+  <!-- Supabase Client Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Configuration -->
+  <script src="config.js"></script>
+  
+  <!-- Supabase Services -->
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-service.js"></script>
+  
+  <!-- Auth Service -->
+  <script src="js/auth-service.js"></script>
+  
+  <!-- Admin Scripts -->
+  <script src="admin/admin.js"></script>
+  <script>
+    // Check authentication and verify Supabase session
+    (async function() {
+      const isAuth = await AdminSystem.isAuthenticated();
+      if (!isAuth) {
+        window.location.href = 'admin.html';
+        return;
+      }
+
+      // Get and display current user info
+      const user = await AdminSystem.getCurrentUser();
+      if (user) {
+        const userInfo = document.querySelector('.admin-nav .navbar-brand');
+        if (userInfo) {
+          userInfo.textContent = `Admin Dashboard - ${user.email}`;
+        }
+      }
+
+      // Verify Supabase authentication for database operations
+      if (typeof SupabaseService !== 'undefined') {
+        const client = SupabaseService.getClient();
+        if (client) {
+          const { data: { session } } = await client.auth.getSession();
+          if (!session) {
+            // Show alert to user
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-warning alert-dismissible fade show';
+            alertDiv.style.cssText = 'position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 9999; max-width: 600px; margin: 0 20px;';
+            alertDiv.innerHTML = `
+              <strong>⚠️ Authentication Required:</strong><br>
+              Database operations require Supabase authentication.<br>
+              <strong>Quick Fix:</strong><br>
+              1. Go to <a href="https://ruafgiyldwlctfldhtoe.supabase.co" target="_blank">Supabase Dashboard</a><br>
+              2. Authentication → Users → Add User<br>
+              3. Create user with email: <code>admin@aamirfolio.com</code> and password: <code>Admin@2024</code><br>
+              4. Logout and login again here<br>
+              <button type="button" class="close" data-dismiss="alert">&times;</button>
+            `;
+            document.body.appendChild(alertDiv);
+            
+            console.warn('No Supabase session found. Database operations may fail.');
+            console.warn('Please create a Supabase user with email: admin@aamirfolio.com and password: Admin@2024');
+            console.warn('Then login again to authenticate with Supabase.');
+          } else {
+            console.log('✓ Supabase session active - database operations should work');
+          }
+        }
+      }
+    })();
+
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+      // Navigation
+      document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const section = this.getAttribute('data-section');
+          AdminSystem.showSection(section);
+        });
+      });
+
+      // Load initial data
+      ProjectManager.loadProjects();
+      ReviewManager.loadReviews();
+
+      // Password change disabled for hardcoded admin
+      // Form is now read-only, showing current credentials
+    });
+  </script>
+</body>
+</html>
+

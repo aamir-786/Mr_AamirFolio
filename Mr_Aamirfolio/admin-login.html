@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Admin Login - Mr_Aamir Portfolio</title>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  
+  <!-- Bootstrap CSS File -->
+  <link href="lib/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Libraries CSS Files -->
+  <link href="lib/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+  <link href="lib/ionicons/css/ionicons.min.css" rel="stylesheet">
+  
+  <!-- Main Stylesheet File -->
+  <link href="css/style.css" rel="stylesheet">
+  <link href="admin/admin.css" rel="stylesheet">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-box">
+      <div class="login-header">
+        <h2><i class="ion-locked"></i> Admin Portal</h2>
+        <p>Login to manage your portfolio</p>
+      </div>
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" class="form-control" id="email" required autocomplete="email" placeholder="your@email.com">
+        </div>
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" class="form-control" id="password" required autocomplete="current-password">
+        </div>
+        <div id="loginError" class="alert alert-danger" style="display: none;"></div>
+        <div id="loginSuccess" class="alert alert-success" style="display: none;"></div>
+        <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
+          <span class="btn-text">Login</span>
+          <span class="btn-loading" style="display: none;"><i class="ion-loading-a"></i> Logging in...</span>
+        </button>
+      </form>
+      <div class="login-footer">
+        <small style="color: #666;">
+          <strong>Admin Credentials:</strong><br>
+          Email: <code>admin@aamirfolio.com</code><br>
+          Password: <code>Admin@2024</code>
+        </small>
+        <br><small style="margin-top: 10px; color: #999;">
+          To change credentials, edit <code>js/auth-service.js</code>
+        </small>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Libraries -->
+  <script src="lib/jquery/jquery.min.js"></script>
+  <script src="lib/bootstrap/js/bootstrap.min.js"></script>
+  
+  <!-- Supabase Client Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Configuration -->
+  <script src="config.js"></script>
+  
+  <!-- Supabase Services -->
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-service.js"></script>
+  
+  <!-- Auth Service -->
+  <script src="js/auth-service.js"></script>
+  
+  <!-- Admin Scripts -->
+  <script src="admin/admin.js"></script>
+  <script>
+    // Initialize admin system
+    AdminSystem.init();
+    
+    // Handle login form
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const loginBtn = document.getElementById('loginBtn');
+      const btnText = loginBtn.querySelector('.btn-text');
+      const btnLoading = loginBtn.querySelector('.btn-loading');
+      const errorDiv = document.getElementById('loginError');
+      const successDiv = document.getElementById('loginSuccess');
+      
+      // Hide previous messages
+      errorDiv.style.display = 'none';
+      successDiv.style.display = 'none';
+      
+      // Show loading state
+      btnText.style.display = 'none';
+      btnLoading.style.display = 'inline';
+      loginBtn.disabled = true;
+      
+      try {
+        const result = await AdminSystem.login(email, password);
+        
+        if (result.success) {
+          successDiv.textContent = 'Login successful! Redirecting...';
+          successDiv.style.display = 'block';
+          setTimeout(() => {
+            window.location.href = 'admin-dashboard.html';
+          }, 500);
+        } else {
+          errorDiv.textContent = result.error || 'Invalid email or password';
+          errorDiv.style.display = 'block';
+          btnText.style.display = 'inline';
+          btnLoading.style.display = 'none';
+          loginBtn.disabled = false;
+        }
+      } catch (error) {
+        errorDiv.textContent = 'An error occurred. Please try again.';
+        errorDiv.style.display = 'block';
+        btnText.style.display = 'inline';
+        btnLoading.style.display = 'none';
+        loginBtn.disabled = false;
+      }
+    });
+
+    // Note: Password reset disabled for hardcoded admin
+    // To change password, edit ADMIN_PASSWORD in js/auth-service.js
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>EmailJS Setup Guide</title>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <link href="lib/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body { padding: 20px; background: #f5f5f5; }
+    .setup-box { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .step { margin-bottom: 30px; padding: 20px; border-left: 4px solid #680e20; background: #f8f9fa; }
+    code { background: #e9ecef; padding: 2px 6px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <div class="setup-box">
+    <h1>📧 EmailJS Setup Guide</h1>
+    <p>Follow these steps to set up email functionality for your contact form.</p>
+
+    <div class="step">
+      <h3>Step 1: Create EmailJS Account</h3>
+      <ol>
+        <li>Go to <a href="https://www.emailjs.com/" target="_blank">https://www.emailjs.com/</a></li>
+        <li>Click "Sign Up" (it's free)</li>
+        <li>Create your account</li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <h3>Step 2: Add Email Service</h3>
+      <ol>
+        <li>In EmailJS dashboard, go to <strong>Email Services</strong></li>
+        <li>Click <strong>"Add New Service"</strong></li>
+        <li>Choose your email provider (Gmail recommended)</li>
+        <li>Connect your Gmail account: <code>aamir.fss22@gmail.com</code></li>
+        <li>Copy the <strong>Service ID</strong> (you'll need this)</li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <h3>Step 3: Create Email Template</h3>
+      <ol>
+        <li>Go to <strong>Email Templates</strong></li>
+        <li>Click <strong>"Create New Template"</strong></li>
+        <li>Use this template:</li>
+      </ol>
+      <div style="background: #fff; padding: 15px; border: 1px solid #ddd; margin-top: 10px;">
+        <strong>Subject:</strong><br>
+        <code>Portfolio Contact: {{subject}}</code><br><br>
+        <strong>Content:</strong><br>
+        <pre style="background: #f8f9fa; padding: 10px; border-radius: 5px;">
+New message from your portfolio:
+
+Name: {{from_name}}
+Email: {{from_email}}
+Subject: {{subject}}
+
+Message:
+{{message}}
+
+---
+Sent from your portfolio contact form
+        </pre>
+      </div>
+      <ol start="4">
+        <li>Set <strong>To Email</strong> to: <code>aamir.fss22@gmail.com</code></li>
+        <li>Click <strong>"Save"</strong></li>
+        <li>Copy the <strong>Template ID</strong></li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <h3>Step 4: Get Public Key</h3>
+      <ol>
+        <li>Go to <strong>Account</strong> → <strong>General</strong></li>
+        <li>Find <strong>Public Key</strong></li>
+        <li>Copy the Public Key</li>
+      </ol>
+    </div>
+
+    <div class="step">
+      <h3>Step 5: Update Configuration</h3>
+      <ol>
+        <li>Open <code>js/email-config.js</code> in your project</li>
+        <li>Replace the placeholders:</li>
+      </ol>
+      <div style="background: #fff; padding: 15px; border: 1px solid #ddd; margin-top: 10px;">
+        <pre style="background: #f8f9fa; padding: 10px; border-radius: 5px;">
+window.EMAILJS_SERVICE_ID = 'your_service_id_here';
+window.EMAILJS_TEMPLATE_ID = 'your_template_id_here';
+window.EMAILJS_PUBLIC_KEY = 'your_public_key_here';
+        </pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <h3>Step 6: Test</h3>
+      <ol>
+        <li>Go to your portfolio contact form</li>
+        <li>Fill out and submit the form</li>
+        <li>Check your email: <code>aamir.fss22@gmail.com</code></li>
+        <li>You should receive the message!</li>
+      </ol>
+    </div>
+
+    <div class="alert alert-info" style="margin-top: 30px;">
+      <strong>Note:</strong> Free EmailJS account allows 200 emails/month. For more, upgrade to a paid plan.
+    </div>
+  </div>
+</body>
+</html>
+

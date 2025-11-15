@@ -1,0 +1,287 @@
+/* Admin Portal Styles */
+
+/* Login Page */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #680e20 0%, #8a1f2f 100%);
+  padding: 20px;
+}
+
+.login-box {
+  background: white;
+  border-radius: 10px;
+  padding: 40px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.login-header h2 {
+  color: #680e20;
+  margin-bottom: 10px;
+}
+
+.login-header p {
+  color: #666;
+}
+
+.login-footer {
+  margin-top: 20px;
+  text-align: center;
+  color: #999;
+}
+
+/* Admin Dashboard */
+.admin-nav {
+  background: #680e20;
+  color: white;
+  padding: 15px 0;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.admin-nav .container-fluid {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.admin-nav .navbar-brand {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.nav-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.admin-container {
+  display: flex;
+  min-height: calc(100vh - 60px);
+}
+
+.sidebar {
+  width: 250px;
+  background: #2c2c2c;
+  color: white;
+  padding: 20px 0;
+}
+
+.nav-menu {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.nav-menu li {
+  margin: 0;
+}
+
+.nav-menu .nav-link {
+  display: block;
+  padding: 15px 25px;
+  color: #ccc;
+  text-decoration: none;
+  transition: all 0.3s;
+  border-left: 3px solid transparent;
+}
+
+.nav-menu .nav-link:hover {
+  background: #3a3a3a;
+  color: white;
+}
+
+.nav-menu .nav-link.active {
+  background: #680e20;
+  color: white;
+  border-left-color: #fff;
+}
+
+.nav-menu .nav-link i {
+  margin-right: 10px;
+  width: 20px;
+}
+
+.admin-content {
+  flex: 1;
+  padding: 30px;
+  background: #f5f5f5;
+}
+
+.content-section {
+  display: none;
+}
+
+.content-section.active {
+  display: block;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.section-header h2 {
+  color: #680e20;
+  margin: 0;
+}
+
+.section-header h2 i {
+  margin-right: 10px;
+}
+
+/* Items List */
+.items-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.item-card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.item-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+}
+
+.item-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 5px;
+  margin-bottom: 15px;
+}
+
+.item-card h4 {
+  color: #680e20;
+  margin-bottom: 10px;
+}
+
+.item-card .item-meta {
+  color: #666;
+  font-size: 0.9rem;
+  margin-bottom: 15px;
+}
+
+.item-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.item-actions .btn {
+  flex: 1;
+}
+
+/* Review Card */
+.review-card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.review-card .author-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.review-card .author-info img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  margin-right: 15px;
+  object-fit: cover;
+}
+
+.review-card .author-name {
+  font-weight: bold;
+  color: #680e20;
+}
+
+.review-card .review-text {
+  color: #666;
+  line-height: 1.6;
+}
+
+/* Settings */
+.settings-content {
+  max-width: 600px;
+}
+
+.settings-content .card {
+  border: none;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.settings-content .card-header {
+  background: #680e20;
+  color: white;
+  border: none;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.empty-state i {
+  font-size: 4rem;
+  margin-bottom: 20px;
+  color: #ddd;
+}
+
+.empty-state h3 {
+  color: #666;
+  margin-bottom: 10px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .admin-container {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+
+  .nav-menu {
+    display: flex;
+    overflow-x: auto;
+  }
+
+  .nav-menu li {
+    flex-shrink: 0;
+  }
+
+  .items-list {
+    grid-template-columns: 1fr;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+}
+
