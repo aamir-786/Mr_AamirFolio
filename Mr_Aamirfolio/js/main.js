@@ -39,12 +39,34 @@
 	});
 
 	/*--/ Star Counter /--*/
-	// CounterService should have already updated counter values based on time
-	// counterUp will animate from 0 to the current text value
-	$('.counter').counterUp({
-		delay: 15,
-		time: 2000
-	});
+	// Wait for CounterService to update values before initializing counterUp
+	// CounterUp reads the text content to determine target value
+	function initCounters() {
+		// Ensure CounterService has updated the values
+		if (typeof CounterService !== 'undefined' && CounterService) {
+			// Force update if not already done
+			if (!$('.counter').first().attr('data-updated')) {
+				CounterService.init();
+			}
+		}
+		
+		// Initialize counterUp - it will read the updated text values
+		$('.counter').counterUp({
+			delay: 15,
+			time: 2000
+		});
+	}
+	
+	// Wait a bit to ensure CounterService has run
+	if (document.readyState === 'complete') {
+		// Page already loaded
+		setTimeout(initCounters, 200);
+	} else {
+		// Wait for page to be fully loaded
+		$(window).on('load', function() {
+			setTimeout(initCounters, 200);
+		});
+	}
 
 	/*--/ Star Scrolling nav /--*/
 	$('a.js-scroll[href*="#"]:not([href="#"])').on("click", function () {

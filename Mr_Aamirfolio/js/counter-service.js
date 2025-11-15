@@ -82,7 +82,9 @@ const CounterService = {
       }
       
       if (newValue !== null) {
-        // Update counter text directly - counterUp will animate from 0 to this value
+        // counterUp checks data-num first, then falls back to text content
+        // Set both to ensure counterUp reads the correct value
+        counter.setAttribute('data-num', newValue);
         counter.textContent = newValue;
         // Store the value for reference
         counter.setAttribute('data-value', newValue);
@@ -106,13 +108,29 @@ const CounterService = {
   }
 };
 
-// Auto-initialize when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', function() {
+// Auto-initialize immediately to update values before counterUp runs
+// Run immediately if DOM is ready, otherwise wait for DOMContentLoaded
+(function initializeCounterService() {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      // Use setTimeout to ensure all scripts are loaded
+      setTimeout(function() {
+        CounterService.init();
+      }, 100);
+    });
+  } else {
+    // DOM is already ready - run immediately
+    setTimeout(function() {
+      CounterService.init();
+    }, 100);
+  }
+})();
+
+// Also ensure values are updated when window loads (after all resources)
+window.addEventListener('load', function() {
+  // Re-update counters to ensure they have the latest values
+  if (typeof CounterService !== 'undefined') {
     CounterService.init();
-  });
-} else {
-  // DOM is already ready
-  CounterService.init();
-}
+  }
+});
 
