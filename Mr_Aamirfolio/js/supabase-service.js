@@ -559,6 +559,97 @@ const SupabaseService = {
       console.error('Error initializing database:', error);
       return { success: false, error: error.message };
     }
+  },
+
+  // ============ STORAGE ============
+
+  // Upload image to Supabase Storage
+  uploadImage: async function(file, folder = 'project-images') {
+    const client = this.getClient();
+    if (!client) {
+      console.error('Supabase client not available');
+      return { success: false, error: 'Supabase client not available' };
+    }
+
+    try {
+      // Check if we have an authenticated session
+      const { data: { session } } = await client.auth.getSession();
+      
+      if (!session) {
+        // Try to use authenticated client from AuthService if available
+        if (typeof AuthService !== 'undefined' && AuthService.client) {
+          const authClient = AuthService.client;
+          
+          // Generate unique filename
+          const timestamp = Date.now();
+          const fileExtension = file.name.split('.').pop();
+          const fileName = `${timestamp}-${Math.random().toString(36).substring(7)}.${fileExtension}`;
+          const filePath = `${folder}/${fileName}`;
+
+          // Upload file to Supabase Storage
+          const { data, error } = await authClient.storage
+            .from('portfolio-images')
+            .upload(filePath, file, {
+              cacheControl: '3600',
+              upsert: false
+            });
+
+          if (error) {
+            console.error('Error uploading image:', error);
+            return { success: false, error: error.message };
+          }
+
+          // Get public URL
+          const { data: urlData } = authClient.storage
+            .from('portfolio-images')
+            .getPublicUrl(filePath);
+
+          return { 
+            success: true, 
+            path: filePath,
+            url: urlData.publicUrl
+          };
+        }
+        
+        return { 
+          success: false, 
+          error: 'Not authenticated. Please login first.' 
+        };
+      }
+
+      // Generate unique filename
+      const timestamp = Date.now();
+      const fileExtension = file.name.split('.').pop();
+      const fileName = `${timestamp}-${Math.random().toString(36).substring(7)}.${fileExtension}`;
+      const filePath = `${folder}/${fileName}`;
+
+      // Upload file to Supabase Storage
+      const { data, error } = await client.storage
+        .from('portfolio-images')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        console.error('Error uploading image:', error);
+        return { success: false, error: error.message };
+      }
+
+      // Get public URL
+      const { data: urlData } = client.storage
+        .from('portfolio-images')
+        .getPublicUrl(filePath);
+
+      return { 
+        success: true, 
+        path: filePath,
+        url: urlData.publicUrl
+      };
+    } catch (error) {
+      console.error('Error in uploadImage:', error);
+      return { success: false, error: error.message };
+    }
   }
 };
 

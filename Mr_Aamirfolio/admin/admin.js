@@ -137,6 +137,11 @@ const ImageUploadManager = {
       if (imageInput && !imageInput.value) {
         imageInput.value = '';
       }
+      // Clear file data
+      if (imageInput) {
+        imageInput.dataset.fileData = '';
+        imageInput.dataset.fileName = '';
+      }
       return;
     }
 
@@ -168,19 +173,12 @@ const ImageUploadManager = {
         previewContainer.style.display = 'block';
       }
       
-      // Store base64 data and generate filename
-      const timestamp = Date.now();
-      const fileExtension = file.name.split('.').pop();
-      const filename = `img/project-${timestamp}.${fileExtension}`;
-      
-      // Store file data for upload
+      // Store file object for upload to Supabase
       if (imageUrlInput) {
-        imageUrlInput.dataset.fileData = e.target.result;
-        imageUrlInput.dataset.fileName = filename;
-        // Set the path in the input field
-        if (!imageUrlInput.value || imageUrlInput.value.trim() === '') {
-          imageUrlInput.value = filename;
-        }
+        imageUrlInput.dataset.fileData = e.target.result; // For preview
+        imageUrlInput.dataset.uploadFile = file.name; // Store filename reference
+        // Don't set the input value yet - it will be set after upload to Supabase
+        imageUrlInput.value = ''; // Clear manual URL input
       }
     };
     reader.onerror = function() {
@@ -192,32 +190,6 @@ const ImageUploadManager = {
     const label = document.querySelector('.custom-file-label');
     if (label) {
       label.textContent = file.name;
-    }
-  },
-
-  // Convert file to base64 (for storage in database or saving)
-  fileToBase64: function(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  },
-
-  // Download image file (client-side save to img folder)
-  downloadImage: function(base64Data, filename) {
-    try {
-      const link = document.createElement('a');
-      link.href = base64Data;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      return true;
-    } catch (error) {
-      console.error('Error downloading image:', error);
-      return false;
     }
   }
 };
@@ -295,6 +267,7 @@ const ProjectManager = {
     if (imageInput) {
       imageInput.dataset.fileData = '';
       imageInput.dataset.fileName = '';
+      imageInput.dataset.uploadFile = '';
     }
     
     // Populate categories
@@ -389,6 +362,7 @@ const ProjectManager = {
     if (imageInput) {
       imageInput.dataset.fileData = '';
       imageInput.dataset.fileName = '';
+      imageInput.dataset.uploadFile = '';
     }
     
     $('#projectModal').modal('show');
@@ -421,19 +395,51 @@ const ProjectManager = {
     const fileInput = document.getElementById('projectImageFile');
     let imagePath = imageInput ? imageInput.value.trim() : '';
     
-    // If there's a file uploaded, handle it
-    if (fileInput && fileInput.files.length > 0 && imageInput) {
-      const fileData = imageInput.dataset.fileData;
-      const fileName = imageInput.dataset.fileName || `img/project-${Date.now()}.png`;
+    // If there's a file uploaded, upload it to Supabase Storage first
+    if (fileInput && fileInput.files.length > 0) {
+      const file = fileInput.files[0];
       
-      if (fileData) {
-        // Store the filename for the database
-        imagePath = fileName;
+      // Show loading state
+      const saveButton = document.querySelector('#projectModal .btn-primary');
+      const originalButtonText = saveButton ? saveButton.textContent : '';
+      if (saveButton) {
+        saveButton.disabled = true;
+        saveButton.textContent = 'Uploading image...';
+      }
+      
+      try {
+        // Upload to Supabase Storage
+        const uploadResult = await SupabaseService.uploadImage(file, 'project-images');
         
-        // In a production environment, you would upload to Supabase Storage here
-        // For now, we'll prompt the user to save the file
-        console.log('Image file ready. Filename:', fileName);
-        console.log('Base64 data available. In production, upload to Supabase Storage bucket.');
+        if (uploadResult.success) {
+          // Use the public URL from Supabase Storage
+          imagePath = uploadResult.url;
+          // Update the image input with the URL
+          if (imageInput) {
+            imageInput.value = imagePath;
+          }
+        } else {
+          alert('Error uploading image: ' + (uploadResult.error || 'Unknown error'));
+          if (saveButton) {
+            saveButton.disabled = false;
+            saveButton.textContent = originalButtonText;
+          }
+          return;
+        }
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        alert('Error uploading image: ' + (error.message || 'Unknown error'));
+        if (saveButton) {
+          saveButton.disabled = false;
+          saveButton.textContent = originalButtonText;
+        }
+        return;
+      }
+      
+      // Restore button state
+      if (saveButton) {
+        saveButton.disabled = false;
+        saveButton.textContent = originalButtonText;
       }
     }
 
@@ -466,27 +472,6 @@ const ProjectManager = {
     if (result.success) {
       this.loadProjects();
       $('#projectModal').modal('hide');
-      
-      // If file was uploaded, prompt user to save it manually
-      if (fileInput && fileInput.files.length > 0 && imageInput && imageInput.dataset.fileData) {
-        const fileName = imageInput.dataset.fileName;
-        const fileExtension = fileName ? fileName.split('.').pop() : 'png';
-        const downloadFileName = `project-${Date.now()}.${fileExtension}`;
-        
-        setTimeout(() => {
-          const save = confirm(
-            `Project saved successfully!\n\n` +
-            `An image file was uploaded. Would you like to download it now?\n\n` +
-            `After downloading, please move the file to the 'img' folder with the name: ${fileName ? fileName.split('/').pop() : downloadFileName}`
-          );
-          if (save) {
-            const success = ImageUploadManager.downloadImage(imageInput.dataset.fileData, downloadFileName);
-            if (success) {
-              alert(`File downloaded! Please rename it and move it to the 'img' folder.`);
-            }
-          }
-        }, 300);
-      }
     } else {
       alert('Error saving project: ' + (result.error || 'Unknown error'));
     }
