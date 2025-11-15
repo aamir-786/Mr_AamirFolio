@@ -659,6 +659,14 @@ const SupabaseService = {
           };
         }
         
+        // Handle RLS policy errors
+        if (error.message && (error.message.includes('row-level security policy') || error.message.includes('RLS'))) {
+          return { 
+            success: false, 
+            error: `Row-Level Security (RLS) policy error. Please run the SQL script 'setup-storage-policies.sql' in Supabase SQL Editor to set up storage policies for authenticated users.` 
+          };
+        }
+        
         return { success: false, error: error.message };
       }
 
