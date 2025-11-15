@@ -2,9 +2,6 @@
 const AuthService = {
   client: null,
   
-  // Hardcoded Admin Credentials (Change these to your preferred credentials)
-  ADMIN_EMAIL: 'admin@aamirfolio.com',
-  ADMIN_PASSWORD: 'Admin@2024', // Change this to your secure password
   
   // Initialize auth service
   init: function() {
@@ -16,8 +13,8 @@ const AuthService = {
     } else if (typeof SupabaseService !== 'undefined') {
       this.client = SupabaseService.getClient();
     } else if (typeof supabase !== 'undefined') {
-      const url = (window.CONFIG && window.CONFIG.SUPABASE_URL) || 'https://ruafgiyldwlctfldhtoe.supabase.co';
-      const key = (window.CONFIG && window.CONFIG.SUPABASE_ANON_KEY) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1YWZnaXlsZHdsY3RmbGRodG9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxODk2MjMsImV4cCI6MjA3ODc2NTYyM30.w8DciDV8BwkJDtwPBP2qgn9E6Kr6s4iich5gfAQx6XM';
+      const url = (window.CONFIG && window.CONFIG.SUPABASE_URL) ;
+      const key = (window.CONFIG && window.CONFIG.SUPABASE_ANON_KEY);
       this.client = supabase.createClient(url, key);
     }
     
