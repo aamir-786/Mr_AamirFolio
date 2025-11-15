@@ -193,9 +193,10 @@ jQuery(document).ready(function($) {
       }
     })
     .catch(error => {
-      console.log('Edge function not available, using database fallback:', error);
-      // Edge function not deployed or failed, use database fallback
+      console.log('Edge function not available (404 - function not deployed), using database fallback:', error);
+      // Edge function not deployed (404) or failed, use database fallback
       // Database webhook will send email if configured
+      // Note: To deploy the edge function, upload it to Supabase Dashboard > Edge Functions
       sendViaSupabase(name, email, subject, message, submitBtn, originalText);
     })
     .finally(() => {
@@ -213,14 +214,25 @@ jQuery(document).ready(function($) {
     if (typeof SupabaseService !== 'undefined') {
       const client = SupabaseService.getClient();
       if (client) {
-        client.from('contact_messages').insert({
-          name: name,
-          email: email,
-          subject: subject || 'No Subject',
-          message: message
-        }).catch(function(error) {
-          console.log('Message saved to Supabase backup:', error);
-        });
+        const insertData = {
+          name: (name || '').trim(),
+          email: (email || '').trim(),
+          message: (message || '').trim()
+        };
+        
+        // Subject can be null if not provided
+        if (subject && subject.trim()) {
+          insertData.subject = subject.trim();
+        } else {
+          insertData.subject = null;
+        }
+        
+        // Only insert if required fields are present
+        if (insertData.name && insertData.email && insertData.message) {
+          client.from('contact_messages').insert(insertData).catch(function(error) {
+            console.log('Message saved to Supabase backup:', error);
+          });
+        }
       }
     }
   }
@@ -235,12 +247,32 @@ jQuery(document).ready(function($) {
         if (client) {
           // Store message in Supabase contact_messages table
           // Don't set created_at - let database handle it with DEFAULT
-          client.from('contact_messages').insert({
-            name: name,
-            email: email,
-            subject: subject || 'No Subject',
-            message: message
-          }).then(function(response) {
+          // Ensure all required fields are present and properly formatted
+          const insertData = {
+            name: (name || '').trim(),
+            email: (email || '').trim(),
+            message: (message || '').trim()
+          };
+          
+          // Subject can be null if not provided, or send 'No Subject' as fallback
+          if (subject && subject.trim()) {
+            insertData.subject = subject.trim();
+          } else {
+            insertData.subject = null; // Explicitly set to null if empty
+          }
+          
+          // Validate required fields before insert
+          if (!insertData.name || !insertData.email || !insertData.message) {
+            console.error('Missing required fields:', { name: insertData.name, email: insertData.email, message: insertData.message });
+            // Show success anyway to user
+            $("#sendmessage").addClass("show");
+            $("#errormessage").removeClass("show");
+            $('.contactForm').find("input, textarea").val("");
+            submitBtn.prop('disabled', false).html(originalText);
+            return;
+          }
+          
+          client.from('contact_messages').insert(insertData).then(function(response) {
             if (response.error) {
               console.error('Error saving message to Supabase:', response.error);
               // Log the error but still show success to user
