@@ -563,8 +563,51 @@ const SupabaseService = {
 
   // ============ STORAGE ============
 
+  // Check if storage bucket exists, create if it doesn't
+  ensureBucketExists: async function(bucketName = 'portfolio-images') {
+    const client = this.getClient();
+    if (!client) {
+      return { success: false, error: 'Supabase client not available' };
+    }
+
+    try {
+      // Try to list buckets to check if it exists
+      const { data: buckets, error: listError } = await client.storage.listBuckets();
+      
+      if (listError) {
+        console.error('Error listing buckets:', listError);
+        // If we can't list buckets, try to create it anyway
+      } else {
+        // Check if bucket already exists
+        const bucketExists = buckets && buckets.some(b => b.name === bucketName);
+        if (bucketExists) {
+          return { success: true, exists: true };
+        }
+      }
+
+      // Try to create the bucket if it doesn't exist
+      const { data: bucket, error: createError } = await client.storage.createBucket(bucketName, {
+        public: true,
+        allowedMimeTypes: ['image/*'],
+        fileSizeLimit: 5242880 // 5MB
+      });
+
+      if (createError) {
+        // If bucket creation fails, it might already exist or we don't have permissions
+        // Try to continue anyway - the upload will fail with a better error
+        console.warn('Could not create bucket (might already exist or insufficient permissions):', createError.message);
+        return { success: false, error: createError.message, shouldTryAnyway: true };
+      }
+
+      return { success: true, created: true };
+    } catch (error) {
+      console.error('Error in ensureBucketExists:', error);
+      return { success: false, error: error.message, shouldTryAnyway: true };
+    }
+  },
+
   // Upload image to Supabase Storage
-  uploadImage: async function(file, folder = 'project-images') {
+  uploadImage: async function(file, folder = 'project-images', bucketName = 'portfolio-images') {
     const client = this.getClient();
     if (!client) {
       console.error('Supabase client not available');
@@ -576,44 +619,18 @@ const SupabaseService = {
       const { data: { session } } = await client.auth.getSession();
       
       if (!session) {
-        // Try to use authenticated client from AuthService if available
-        if (typeof AuthService !== 'undefined' && AuthService.client) {
-          const authClient = AuthService.client;
-          
-          // Generate unique filename
-          const timestamp = Date.now();
-          const fileExtension = file.name.split('.').pop();
-          const fileName = `${timestamp}-${Math.random().toString(36).substring(7)}.${fileExtension}`;
-          const filePath = `${folder}/${fileName}`;
-
-          // Upload file to Supabase Storage
-          const { data, error } = await authClient.storage
-            .from('portfolio-images')
-            .upload(filePath, file, {
-              cacheControl: '3600',
-              upsert: false
-            });
-
-          if (error) {
-            console.error('Error uploading image:', error);
-            return { success: false, error: error.message };
-          }
-
-          // Get public URL
-          const { data: urlData } = authClient.storage
-            .from('portfolio-images')
-            .getPublicUrl(filePath);
-
-          return { 
-            success: true, 
-            path: filePath,
-            url: urlData.publicUrl
-          };
-        }
-        
         return { 
           success: false, 
           error: 'Not authenticated. Please login first.' 
+        };
+      }
+
+      // Try to ensure bucket exists (will create if it doesn't)
+      const bucketCheck = await this.ensureBucketExists(bucketName);
+      if (!bucketCheck.success && !bucketCheck.shouldTryAnyway) {
+        return { 
+          success: false, 
+          error: `Storage bucket '${bucketName}' is not available. Please create it in Supabase Dashboard: Storage → Create Bucket → Name: "${bucketName}" → Public: ON` 
         };
       }
 
@@ -621,11 +638,11 @@ const SupabaseService = {
       const timestamp = Date.now();
       const fileExtension = file.name.split('.').pop();
       const fileName = `${timestamp}-${Math.random().toString(36).substring(7)}.${fileExtension}`;
-      const filePath = `${folder}/${fileName}`;
+      const filePath = folder ? `${folder}/${fileName}` : fileName;
 
       // Upload file to Supabase Storage
       const { data, error } = await client.storage
-        .from('portfolio-images')
+        .from(bucketName)
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
@@ -633,12 +650,21 @@ const SupabaseService = {
 
       if (error) {
         console.error('Error uploading image:', error);
+        
+        // Provide helpful error messages
+        if (error.message && error.message.includes('Bucket not found')) {
+          return { 
+            success: false, 
+            error: `Storage bucket '${bucketName}' not found. Please create it in Supabase Dashboard:\n\n1. Go to Storage\n2. Click "Create Bucket"\n3. Name: "${bucketName}"\n4. Set to Public\n5. Save` 
+          };
+        }
+        
         return { success: false, error: error.message };
       }
 
       // Get public URL
       const { data: urlData } = client.storage
-        .from('portfolio-images')
+        .from(bucketName)
         .getPublicUrl(filePath);
 
       return { 
