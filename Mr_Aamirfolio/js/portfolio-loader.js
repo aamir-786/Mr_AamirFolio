@@ -46,10 +46,31 @@
         return;
       }
 
-      container.innerHTML = projects.map(project => `
+      container.innerHTML = projects.map(project => {
+        // Truncate title if too long
+        const maxTitleLength = 50;
+        const displayTitle = project.title.length > maxTitleLength 
+          ? project.title.substring(0, maxTitleLength) + '...' 
+          : project.title;
+        
+        // Truncate category if too long
+        const maxCategoryLength = 30;
+        const displayCategory = project.category.length > maxCategoryLength 
+          ? project.category.substring(0, maxCategoryLength) + '...' 
+          : project.category;
+        
+        // Get description (if exists) or use category as description
+        const description = project.description || project.category || '';
+        const maxDescLength = 100;
+        const shortDescription = description.length > maxDescLength 
+          ? description.substring(0, maxDescLength) + '...' 
+          : description;
+        const hasMore = description.length > maxDescLength;
+        
+        return `
         <div class="col-md-4">
           <div class="work-box">
-            <a href="${project.image}" data-lightbox="gallery-mf">
+            <a href="${project.image}" data-lightbox="gallery-mf" data-title="${project.title}">
               <div class="work-img">
                 <img src="${project.image}" alt="${project.title}" class="img-fluid" onerror="this.src='img/placeholder.png'">
               </div>
@@ -57,9 +78,9 @@
             <div class="work-content">
               <div class="row">
                 <div class="col-sm-8">
-                  <h2 class="w-title">${project.title}</h2>
+                  <h2 class="w-title" title="${project.title}">${displayTitle}</h2>
                   <div class="w-more">
-                    <span class="w-ctegory">${project.category}</span> / <span class="w-date">${project.date}</span>
+                    <span class="w-ctegory" title="${project.category}">${displayCategory}</span> / <span class="w-date">${project.date}</span>
                   </div>
                 </div>
                 <div class="col-sm-4">
@@ -68,6 +89,14 @@
                   </div>
                 </div>
               </div>
+              ${description ? `
+              <div class="row">
+                <div class="col-12">
+                  <p class="w-description">${shortDescription}</p>
+                  ${hasMore ? `<a href="project-details.html?id=${project.id}" class="read-more-link">Read More</a>` : ''}
+                </div>
+              </div>
+              ` : ''}
               <div class="row">
                 <div class="col-12">
                   <a href="${project.url || 'https://github.com/aamir-786'}" target="_blank" class="btn-go-live">Go Live</a>
@@ -76,7 +105,8 @@
             </div>
           </div>
         </div>
-      `).join('');
+      `;
+      }).join('');
 
       // Reinitialize lightbox for new images
       if (typeof lightbox !== 'undefined') {

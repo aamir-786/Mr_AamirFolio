@@ -72,7 +72,8 @@ const SupabaseService = {
               category: project.category,
               date: project.date,
               image: project.image,
-              url: project.url || 'https://github.com/aamir-786'
+              url: project.url || 'https://github.com/aamir-786',
+              description: project.description || null
             }])
             .select();
 
@@ -97,7 +98,8 @@ const SupabaseService = {
           category: project.category,
           date: project.date,
           image: project.image,
-          url: project.url || 'https://github.com/aamir-786'
+          url: project.url || 'https://github.com/aamir-786',
+          description: project.description || null
         }])
         .select();
 
@@ -136,7 +138,8 @@ const SupabaseService = {
               category: project.category,
               date: project.date,
               image: project.image,
-              url: project.url || 'https://github.com/aamir-786'
+              url: project.url || 'https://github.com/aamir-786',
+              description: project.description || null
             })
             .eq('id', id)
             .select();
@@ -162,7 +165,8 @@ const SupabaseService = {
           category: project.category,
           date: project.date,
           image: project.image,
-          url: project.url || 'https://github.com/aamir-786'
+          url: project.url || 'https://github.com/aamir-786',
+          description: project.description || null
         })
         .eq('id', id)
         .select();

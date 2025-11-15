@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Project Details - Mr_Aamir Portfolio</title>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  
+  <!-- Bootstrap CSS File -->
+  <link href="lib/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  
+  <!-- Libraries CSS Files -->
+  <link href="lib/font-awesome/css/font-awesome.min.css" rel="stylesheet">
+  <link href="lib/ionicons/css/ionicons.min.css" rel="stylesheet">
+  
+  <!-- Main Stylesheet File -->
+  <link href="css/style.css" rel="stylesheet">
+  
+  <style>
+    .project-details-container {
+      padding: 80px 0;
+      min-height: 100vh;
+      background: #f8f9fa;
+    }
+    .project-details-card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+      overflow: hidden;
+      margin-bottom: 30px;
+    }
+    .project-image {
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+    }
+    
+    .project-image-container {
+      width: 100%;
+      text-align: center;
+      background: #f8f9fa;
+      padding: 20px;
+      margin-bottom: 0;
+      overflow: hidden;
+    }
+    
+    .project-image-container img {
+      max-width: 100%;
+      height: auto;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+    
+    .project-image-container img:hover {
+      transform: scale(1.02);
+    }
+    .project-header {
+      padding: 30px;
+      border-bottom: 1px solid #eee;
+    }
+    .project-body {
+      padding: 30px;
+    }
+    .project-meta {
+      display: flex;
+      gap: 20px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .meta-item i {
+      color: #680e20;
+    }
+    .project-description {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: #555;
+      margin: 20px 0;
+    }
+    .back-button {
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="project-details-container">
+    <div class="container">
+      <div class="row">
+        <div class="col-12">
+          <a href="index.html#work" class="btn btn-outline-primary back-button">
+            <i class="ion-arrow-left-c"></i> Back to Portfolio
+          </a>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-8 offset-lg-2">
+          <div class="project-details-card" id="projectDetails">
+            <div class="text-center p-5">
+              <i class="ion-loading-a" style="font-size: 2rem;"></i>
+              <p>Loading project details...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Libraries -->
+  <script src="lib/jquery/jquery.min.js"></script>
+  <script src="lib/bootstrap/js/bootstrap.min.js"></script>
+  
+  <!-- Supabase Client Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <!-- Configuration -->
+  <script src="config.js"></script>
+  
+  <!-- Supabase Services -->
+  <script src="js/supabase-config.js"></script>
+  <script src="js/supabase-service.js"></script>
+  
+  <script>
+    // Get project ID from URL
+    function getProjectId() {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get('id');
+    }
+
+    // Load project details
+    async function loadProjectDetails() {
+      const projectId = getProjectId();
+      const container = document.getElementById('projectDetails');
+      
+      if (!projectId) {
+        container.innerHTML = `
+          <div class="project-header">
+            <h1>Project Not Found</h1>
+            <p>The project you're looking for doesn't exist.</p>
+            <a href="index.html#work" class="btn btn-primary">Back to Portfolio</a>
+          </div>
+        `;
+        return;
+      }
+
+      try {
+        const projects = await SupabaseService.getProjects();
+        const project = projects.find(p => p.id == projectId || p.id === parseInt(projectId));
+        
+        if (!project) {
+          container.innerHTML = `
+            <div class="project-header">
+              <h1>Project Not Found</h1>
+              <p>The project you're looking for doesn't exist.</p>
+              <a href="index.html#work" class="btn btn-primary">Back to Portfolio</a>
+            </div>
+          `;
+          return;
+        }
+
+        // Render project details
+        const description = project.description || project.category || 'No description available.';
+        
+        container.innerHTML = `
+          <div class="project-image-container">
+            <img src="${project.image}" alt="${project.title}" class="project-image" 
+                 onclick="window.open('${project.image}', '_blank')" 
+                 style="cursor: pointer;" 
+                 title="Click to view full size"
+                 onerror="this.src='img/placeholder.png'">
+          </div>
+          <div class="project-header">
+            <h1 class="mb-3">${project.title}</h1>
+            <div class="project-meta">
+              <div class="meta-item">
+                <i class="ion-ios-folder-outline"></i>
+                <span><strong>Category:</strong> ${project.category}</span>
+              </div>
+              <div class="meta-item">
+                <i class="ion-calendar"></i>
+                <span><strong>Date:</strong> ${project.date}</span>
+              </div>
+            </div>
+          </div>
+          <div class="project-body">
+            <h3>About This Project</h3>
+            <div class="project-description">
+              ${description.split('\n').map(p => `<p>${p}</p>`).join('')}
+            </div>
+            ${project.url ? `
+            <div class="mt-4">
+              <a href="${project.url}" target="_blank" class="btn btn-primary btn-lg">
+                <i class="ion-ios-world-outline"></i> View Live Project
+              </a>
+            </div>
+            ` : ''}
+          </div>
+        `;
+      } catch (error) {
+        console.error('Error loading project:', error);
+        container.innerHTML = `
+          <div class="project-header">
+            <h1>Error Loading Project</h1>
+            <p>There was an error loading the project details. Please try again later.</p>
+            <a href="index.html#work" class="btn btn-primary">Back to Portfolio</a>
+          </div>
+        `;
+      }
+    }
+
+    // Load when page is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', loadProjectDetails);
+    } else {
+      loadProjectDetails();
+    }
+  </script>
+</body>
+</html>
+

@@ -148,6 +148,7 @@ const ProjectManager = {
     document.getElementById('projectDate').value = project.date;
     document.getElementById('projectImage').value = project.image;
     document.getElementById('projectUrl').value = project.url || '';
+    document.getElementById('projectDescription').value = project.description || '';
     
     $('#projectModal').modal('show');
   },
@@ -165,7 +166,8 @@ const ProjectManager = {
       category: document.getElementById('projectCategory').value,
       date: document.getElementById('projectDate').value,
       image: document.getElementById('projectImage').value,
-      url: document.getElementById('projectUrl').value || 'https://github.com/aamir-786'
+      url: document.getElementById('projectUrl').value || 'https://github.com/aamir-786',
+      description: document.getElementById('projectDescription').value || null
     };
 
     const id = document.getElementById('projectId').value;
