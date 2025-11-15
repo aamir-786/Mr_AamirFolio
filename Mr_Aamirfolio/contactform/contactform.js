@@ -160,7 +160,7 @@ jQuery(document).ready(function($) {
     const anonKey = (window.CONFIG && window.CONFIG.SUPABASE_ANON_KEY) || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ1YWZnaXlsZHdsY3RmbGRodG9lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjMxODk2MjMsImV4cCI6MjA3ODc2NTYyM30.w8DciDV8BwkJDtwPBP2qgn9E6Kr6s4iich5gfAQx6XM';
     const edgeFunctionUrl = `${supabaseUrl}/functions/v1/send-contact-email`;
     
-    // Try to call Edge Function
+    // Try to call Edge Function with improved error handling
     fetch(edgeFunctionUrl, {
       method: 'POST',
       headers: {
@@ -176,36 +176,42 @@ jQuery(document).ready(function($) {
       })
     })
     .then(response => {
+      // Check if response is OK (200-299) or if it's a 404 (function not deployed)
+      if (response.status === 404) {
+        // Edge function not deployed, silently fallback to database
+        throw { type: 'NOT_DEPLOYED', status: 404 };
+      }
       if (!response.ok) {
-        throw new Error('Edge function not available');
+        throw { type: 'HTTP_ERROR', status: response.status };
       }
       return response.json();
     })
     .then(data => {
-      if (data.success) {
+      if (data && data.success) {
         $("#sendmessage").addClass("show");
         $("#errormessage").removeClass("show");
         $('.contactForm').find("input, textarea").val("");
         submitBtn.prop('disabled', false).html(originalText);
       } else {
-        // Edge function failed, fallback to database
+        // Edge function returned but failed, fallback to database
         sendViaSupabase(name, email, subject, message, submitBtn, originalText);
       }
     })
     .catch(error => {
-      console.log('Edge function not available (404 - function not deployed), using database fallback:', error);
-      // Edge function not deployed (404) or failed, use database fallback
-      // Database webhook will send email if configured
-      // Note: To deploy the edge function, upload it to Supabase Dashboard > Edge Functions
-      sendViaSupabase(name, email, subject, message, submitBtn, originalText);
-    })
-    .finally(() => {
-      // Ensure button is re-enabled even if there's an unexpected error
-      setTimeout(() => {
-        if (submitBtn.prop('disabled')) {
-          submitBtn.prop('disabled', false).html(originalText);
-        }
-      }, 5000); // Safety timeout
+      // Handle different types of errors
+      if (error && error.type === 'NOT_DEPLOYED') {
+        // Edge function not deployed (404) - silently use database fallback
+        // This is expected behavior, no need to log or warn user
+        sendViaSupabase(name, email, subject, message, submitBtn, originalText);
+      } else if (error && error.name === 'TypeError' && error.message.includes('fetch')) {
+        // Network error or CORS issue - use database fallback
+        console.warn('Unable to reach Edge Function, using database fallback');
+        sendViaSupabase(name, email, subject, message, submitBtn, originalText);
+      } else {
+        // Other errors - use database fallback
+        console.log('Edge Function unavailable, using database fallback');
+        sendViaSupabase(name, email, subject, message, submitBtn, originalText);
+      }
     });
   }
 

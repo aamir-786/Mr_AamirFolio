@@ -80,6 +80,120 @@ const AdminSystem = {
 const CategoryManager = {
   categories: [],
 
+  // Normalize category name - merge similar/duplicate categories
+  normalizeCategory: function(category) {
+    if (!category) return category;
+    
+    const normalized = category.trim();
+    
+    // Category mapping: map similar categories to unified names
+    const categoryMap = {
+      // Web + Python variations
+      'Web Design + Python': 'Web + Python',
+      'web design + python': 'Web + Python',
+      'Web + Python': 'Web + Python',
+      'web + python': 'Web + Python',
+      'Python Web': 'Web + Python',
+      'python web': 'Web + Python',
+      
+      // Web + PHP variations
+      'Web Design + PHP': 'Web + PHP',
+      'web design + php': 'Web + PHP',
+      'Web + PHP': 'Web + PHP',
+      'web + php': 'Web + PHP',
+      'PHP Web': 'Web + PHP',
+      'php web': 'Web + PHP',
+      
+      // Web Development variations
+      'Web Design': 'Web Development',
+      'web design': 'Web Development',
+      'Web Development': 'Web Development',
+      'web development': 'Web Development',
+      'Frontend Development': 'Web Development',
+      'frontend development': 'Web Development',
+      'Responsive Design': 'Web Development',
+      'responsive design': 'Web Development',
+      
+      // Full Stack Development (MERN Stack) variations
+      'Full Stack Development (MERN Stack)': 'Full Stack Development (MERN Stack)',
+      'full stack development (mern stack)': 'Full Stack Development (MERN Stack)',
+      'MERN Stack': 'Full Stack Development (MERN Stack)',
+      'mern stack': 'Full Stack Development (MERN Stack)',
+      'Full Stack': 'Full Stack Development (MERN Stack)',
+      'full stack': 'Full Stack Development (MERN Stack)',
+      'Software Engineering': 'Full Stack Development (MERN Stack)',
+      'software engineering': 'Full Stack Development (MERN Stack)',
+      'Software Engineering (Java)': 'Full Stack Development (MERN Stack)',
+      'Software Engineering(Java)': 'Full Stack Development (MERN Stack)',
+      'Software Engineering(java)': 'Full Stack Development (MERN Stack)',
+      'Java Programming': 'Full Stack Development (MERN Stack)',
+      'java programming': 'Full Stack Development (MERN Stack)',
+      'Java Development': 'Full Stack Development (MERN Stack)',
+      'java development': 'Full Stack Development (MERN Stack)',
+      'Java Project': 'Full Stack Development (MERN Stack)',
+      'java project': 'Full Stack Development (MERN Stack)',
+      'Java': 'Full Stack Development (MERN Stack)',
+      'java': 'Full Stack Development (MERN Stack)',
+      
+      // AI variations
+      'AI': 'AI',
+      'ai': 'AI',
+      'Artificial Intelligence': 'AI',
+      'artificial intelligence': 'AI',
+      'Machine Learning': 'AI',
+      'machine learning': 'AI',
+      'ML': 'AI',
+      'ml': 'AI',
+    };
+    
+    // Check if category should be mapped
+    if (categoryMap[normalized]) {
+      return categoryMap[normalized];
+    }
+    
+    // Case-insensitive check for common variations
+    // Order matters - check most specific first
+    const lowerNormalized = normalized.toLowerCase();
+    
+    // Check for Web + Python (must check before Web Development)
+    if (lowerNormalized.includes('python') && (lowerNormalized.includes('web') || lowerNormalized.includes('design'))) {
+      return 'Web + Python';
+    }
+    
+    // Check for Web + PHP (must check before Web Development)
+    if (lowerNormalized.includes('php') && (lowerNormalized.includes('web') || lowerNormalized.includes('design'))) {
+      return 'Web + PHP';
+    }
+    
+    // Check for AI
+    if (lowerNormalized.includes('artificial intelligence') || 
+        lowerNormalized.includes('machine learning') ||
+        lowerNormalized === 'ai' ||
+        lowerNormalized === 'ml') {
+      return 'AI';
+    }
+    
+    // Check for Full Stack / MERN Stack / Java (must check before general web categories)
+    if (lowerNormalized.includes('mern') || 
+        (lowerNormalized.includes('full stack') && !lowerNormalized.includes('web')) ||
+        (lowerNormalized.includes('software engineering')) ||
+        (lowerNormalized.includes('java')) ||
+        lowerNormalized === 'java') {
+      return 'Full Stack Development (MERN Stack)';
+    }
+    
+    // Check for Web Development (general web categories - check last)
+    if (lowerNormalized.includes('web development') || 
+        lowerNormalized.includes('web design') ||
+        lowerNormalized.includes('frontend') ||
+        lowerNormalized.includes('responsive design') ||
+        (lowerNormalized.includes('web') && !lowerNormalized.includes('python') && !lowerNormalized.includes('php'))) {
+      return 'Web Development';
+    }
+    
+    return normalized;
+  },
+
   // Load categories from JSON file
   loadCategories: async function() {
     try {
@@ -88,20 +202,24 @@ const CategoryManager = {
         throw new Error('Failed to load categories.json');
       }
       const data = await response.json();
-      this.categories = data.categories || [];
+      const rawCategories = data.categories || [];
+      
+      // Normalize and deduplicate categories
+      const normalizedCategories = rawCategories
+        .map(cat => this.normalizeCategory(cat))
+        .filter((cat, index, self) => self.indexOf(cat) === index && cat); // Remove duplicates and empty
+      
+      this.categories = normalizedCategories.sort();
       return this.categories;
     } catch (error) {
       console.error('Error loading categories:', error);
-      // Fallback categories if JSON file doesn't exist
+      // Fallback categories (normalized)
       this.categories = [
-        'Web Design',
-        'Software Engineering (Java)',
-        'Web Design + Python',
-        'Web Design + PHP',
-        'Java Programming',
-        'Software Engineering',
+        'Web + Python',
+        'Web + PHP',
         'Web Development',
-        'Responsive Design'
+        'Full Stack Development (MERN Stack)',
+        'AI'
       ];
       return this.categories;
     }
@@ -313,9 +431,16 @@ const ProjectManager = {
     CategoryManager.populateDropdown();
     const categorySelect = document.getElementById('projectCategory');
     if (categorySelect) {
+      // Normalize the project category before setting in dropdown
+      const normalizedCategory = CategoryManager.normalizeCategory(project.category);
       // Small delay to ensure dropdown is populated
       setTimeout(() => {
-        categorySelect.value = project.category;
+        // Try normalized first, fallback to original if not found
+        if (normalizedCategory && Array.from(categorySelect.options).some(opt => opt.value === normalizedCategory)) {
+          categorySelect.value = normalizedCategory;
+        } else {
+          categorySelect.value = project.category;
+        }
       }, 100);
     }
     
@@ -466,9 +591,13 @@ const ProjectManager = {
       return;
     }
 
+    // Normalize category before saving
+    const rawCategory = document.getElementById('projectCategory').value;
+    const normalizedCategory = CategoryManager.normalizeCategory(rawCategory);
+    
     const project = {
       title: document.getElementById('projectTitle').value,
-      category: document.getElementById('projectCategory').value,
+      category: normalizedCategory || rawCategory, // Use normalized category, fallback to original if normalization fails
       date: formattedDate,
       image: imagePath,
       url: document.getElementById('projectUrl').value || 'https://github.com/aamir-786',

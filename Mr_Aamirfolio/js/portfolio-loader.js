@@ -36,28 +36,156 @@
     return SupabaseService ? SupabaseService.getDefaultReviews() : [];
   }
 
+  // Normalize categories - merge similar/duplicate categories
+  function normalizeCategory(category) {
+    if (!category) return category;
+    
+    const normalized = category.trim();
+    
+    // Category mapping: map similar categories to unified names
+    const categoryMap = {
+      // Web + Python variations
+      'Web Design + Python': 'Web + Python',
+      'web design + python': 'Web + Python',
+      'Web + Python': 'Web + Python',
+      'web + python': 'Web + Python',
+      'Python Web': 'Web + Python',
+      'python web': 'Web + Python',
+      
+      // Web + PHP variations
+      'Web Design + PHP': 'Web + PHP',
+      'web design + php': 'Web + PHP',
+      'Web + PHP': 'Web + PHP',
+      'web + php': 'Web + PHP',
+      'PHP Web': 'Web + PHP',
+      'php web': 'Web + PHP',
+      
+      // Web Development variations
+      'Web Design': 'Web Development',
+      'web design': 'Web Development',
+      'Web Development': 'Web Development',
+      'web development': 'Web Development',
+      'Frontend Development': 'Web Development',
+      'frontend development': 'Web Development',
+      'Responsive Design': 'Web Development',
+      'responsive design': 'Web Development',
+      
+      // Full Stack Development (MERN Stack) variations
+      'Full Stack Development (MERN Stack)': 'Full Stack Development (MERN Stack)',
+      'full stack development (mern stack)': 'Full Stack Development (MERN Stack)',
+      'MERN Stack': 'Full Stack Development (MERN Stack)',
+      'mern stack': 'Full Stack Development (MERN Stack)',
+      'Full Stack': 'Full Stack Development (MERN Stack)',
+      'full stack': 'Full Stack Development (MERN Stack)',
+      'Software Engineering': 'Full Stack Development (MERN Stack)',
+      'software engineering': 'Full Stack Development (MERN Stack)',
+      'Software Engineering (Java)': 'Full Stack Development (MERN Stack)',
+      'Software Engineering(Java)': 'Full Stack Development (MERN Stack)',
+      'Software Engineering(java)': 'Full Stack Development (MERN Stack)',
+      'Java Programming': 'Full Stack Development (MERN Stack)',
+      'java programming': 'Full Stack Development (MERN Stack)',
+      'Java Development': 'Full Stack Development (MERN Stack)',
+      'java development': 'Full Stack Development (MERN Stack)',
+      'Java Project': 'Full Stack Development (MERN Stack)',
+      'java project': 'Full Stack Development (MERN Stack)',
+      'Java': 'Full Stack Development (MERN Stack)',
+      'java': 'Full Stack Development (MERN Stack)',
+      
+      // AI variations
+      'AI': 'AI',
+      'ai': 'AI',
+      'Artificial Intelligence': 'AI',
+      'artificial intelligence': 'AI',
+      'Machine Learning': 'AI',
+      'machine learning': 'AI',
+      'ML': 'AI',
+      'ml': 'AI',
+    };
+    
+    // Check if category should be mapped
+    if (categoryMap[normalized]) {
+      return categoryMap[normalized];
+    }
+    
+    // Case-insensitive check for common variations
+    // Order matters - check most specific first
+    const lowerNormalized = normalized.toLowerCase();
+    
+    // Check for Web + Python (must check before Web Development)
+    if (lowerNormalized.includes('python') && (lowerNormalized.includes('web') || lowerNormalized.includes('design'))) {
+      return 'Web + Python';
+    }
+    
+    // Check for Web + PHP (must check before Web Development)
+    if (lowerNormalized.includes('php') && (lowerNormalized.includes('web') || lowerNormalized.includes('design'))) {
+      return 'Web + PHP';
+    }
+    
+    // Check for AI
+    if (lowerNormalized.includes('artificial intelligence') || 
+        lowerNormalized.includes('machine learning') ||
+        lowerNormalized === 'ai' ||
+        lowerNormalized === 'ml') {
+      return 'AI';
+    }
+    
+    // Check for Full Stack / MERN Stack / Java (must check before general web categories)
+    if (lowerNormalized.includes('mern') || 
+        (lowerNormalized.includes('full stack') && !lowerNormalized.includes('web')) ||
+        (lowerNormalized.includes('software engineering')) ||
+        (lowerNormalized.includes('java')) ||
+        lowerNormalized === 'java') {
+      return 'Full Stack Development (MERN Stack)';
+    }
+    
+    // Check for Web Development (general web categories - check last)
+    if (lowerNormalized.includes('web development') || 
+        lowerNormalized.includes('web design') ||
+        lowerNormalized.includes('frontend') ||
+        lowerNormalized.includes('responsive design') ||
+        (lowerNormalized.includes('web') && !lowerNormalized.includes('python') && !lowerNormalized.includes('php'))) {
+      return 'Web Development';
+    }
+    
+    return normalized;
+  }
+
   // Load categories for filter
   async function loadCategories() {
     try {
       const response = await fetch('data/categories.json');
       if (response.ok) {
         const data = await response.json();
-        return data.categories || [];
+        const categories = data.categories || [];
+        
+        // Normalize and deduplicate categories
+        const normalizedCategories = categories
+          .map(cat => normalizeCategory(cat))
+          .filter((cat, index, self) => self.indexOf(cat) === index && cat); // Remove duplicates and empty
+        
+        // Sort and return unique categories
+        return normalizedCategories.sort();
       }
     } catch (error) {
       console.error('Error loading categories:', error);
     }
-    // Fallback categories
+    // Fallback categories (normalized)
     return [
-      'Web Design',
-      'Software Engineering (Java)',
-      'Web Design + Python',
-      'Web Design + PHP',
-      'Java Programming',
-      'Software Engineering',
+      'Web + Python',
+      'Web + PHP',
       'Web Development',
-      'Responsive Design'
+      'Full Stack Development (MERN Stack)',
+      'AI'
     ];
+  }
+
+  // Normalize project categories when loading
+  function normalizeProjectCategories(projects) {
+    return projects.map(project => ({
+      ...project,
+      category: normalizeCategory(project.category),
+      originalCategory: project.category // Keep original for display if needed
+    }));
   }
 
   // Render category filter buttons
@@ -65,16 +193,21 @@
     const filterContainer = document.getElementById('portfolio-filter');
     if (!filterContainer) return;
 
-    const categories = await loadCategories();
+    // allProjects is already normalized when loaded, so use it directly
+    // Get unique normalized categories from projects
+    const projectCategories = [...new Set(allProjects.map(p => p.category))]
+      .filter(cat => cat) // Remove empty categories
+      .sort();
     
-    // Get unique categories from projects
-    const projectCategories = [...new Set(allProjects.map(p => p.category))].sort();
+    // Load categories from JSON and normalize
+    const jsonCategories = await loadCategories();
     
-    // Use project categories if available, otherwise use JSON categories
-    const categoriesToShow = projectCategories.length > 0 ? projectCategories : categories;
+    // Combine and deduplicate: use project categories if available, otherwise use JSON categories
+    const allCategories = projectCategories.length > 0 ? projectCategories : jsonCategories;
+    const uniqueCategories = [...new Set(allCategories)].sort();
     
     // Add filter buttons for each category
-    const filterButtons = categoriesToShow.map(category => 
+    const filterButtons = uniqueCategories.map(category => 
       `<button class="filter-btn" data-filter="${category}">${category}</button>`
     ).join('');
     
@@ -99,11 +232,12 @@
     });
   }
 
-  // Filter projects by category
+  // Filter projects by category (using normalized categories)
   function getFilteredProjects() {
     if (currentFilter === 'all') {
       return allProjects;
     }
+    // allProjects is already normalized when loaded, so we can filter directly
     return allProjects.filter(project => project.category === currentFilter);
   }
 
@@ -197,7 +331,7 @@
     if (seeMoreContainer && seeMoreBtn) {
       if (displayedCount < filteredProjects.length) {
         seeMoreContainer.style.display = 'block';
-        seeMoreBtn.textContent = `See More (${filteredProjects.length - displayedCount} remaining)`;
+        seeMoreBtn.textContent = `See More`;
       } else {
         seeMoreContainer.style.display = 'none';
       }
@@ -221,14 +355,17 @@
     container.innerHTML = '<div class="col-12 text-center p-4"><i class="ion-loading-a"></i> Loading projects...</div>';
 
     try {
-      allProjects = await getProjects();
+      const rawProjects = await getProjects();
       
-      if (allProjects.length === 0) {
+      if (rawProjects.length === 0) {
         container.innerHTML = '<div class="col-12 text-center"><p>No projects available at the moment.</p></div>';
         return;
       }
 
-      // Render category filters
+      // Normalize project categories to merge similar ones
+      allProjects = normalizeProjectCategories(rawProjects);
+      
+      // Render category filters (after normalizing)
       await renderCategoryFilters();
       
       // Display initial projects (6 projects)

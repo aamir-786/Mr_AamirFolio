@@ -4,21 +4,23 @@
 const CounterService = {
   // Configuration: Set your career start date
   // Change this to when you started your professional career
-  careerStartDate: new Date('2021-06-01'), // Adjusted to show more experience (earlier start date)
+  // Set to approximately 3 years ago to show 3.0 years of experience currently
+  careerStartDate: new Date('2022-11-01'), // Adjusted to show 3.0 years currently
   
   // Base values at start date (your initial values)
   baseValues: {
-    worksCompleted: 10,     // Started with some initial projects
+    worksCompleted: 0,      // Started with 0 projects
     yearsExperience: 0,     // Started with 0 years
-    totalClients: 5,        // Started with some initial clients
-    awardsWon: 1            // Started with some initial awards
+    totalClients: 0,        // Started with 0 clients
+    awardsWon: 0            // Started with 0 awards
   },
   
-  // Growth rates (how much to add per year) - increased for faster growth
+  // Growth rates (how much to add per year)
+  // Calibrated to show: 69 works, 3.0 years, 13 clients, 11 awards currently
   growthRates: {
-    worksCompleted: 20,     // ~20 projects per year (increased from 18)
-    totalClients: 12,       // ~12 clients per year (increased from 10)
-    awardsWon: 3            // ~3 awards per year (increased from 2.4)
+    worksCompleted: 22.97,  // ~22.97 projects per year (69 total at 3.0 years)
+    totalClients: 4.33,     // ~4.33 clients per year (13 total at 3.0 years)
+    awardsWon: 3.67         // ~3.67 awards per year (11 total at 3.0 years)
   },
   
   // Initialize and calculate current values
