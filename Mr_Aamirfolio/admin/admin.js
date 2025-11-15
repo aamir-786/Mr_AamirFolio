@@ -76,6 +76,152 @@ const AdminSystem = {
   }
 };
 
+// Category Manager - Load categories from JSON
+const CategoryManager = {
+  categories: [],
+
+  // Load categories from JSON file
+  loadCategories: async function() {
+    try {
+      const response = await fetch('data/categories.json');
+      if (!response.ok) {
+        throw new Error('Failed to load categories.json');
+      }
+      const data = await response.json();
+      this.categories = data.categories || [];
+      return this.categories;
+    } catch (error) {
+      console.error('Error loading categories:', error);
+      // Fallback categories if JSON file doesn't exist
+      this.categories = [
+        'Web Design',
+        'Software Engineering (Java)',
+        'Web Design + Python',
+        'Web Design + PHP',
+        'Java Programming',
+        'Software Engineering',
+        'Web Development',
+        'Responsive Design'
+      ];
+      return this.categories;
+    }
+  },
+
+  // Populate category dropdown
+  populateDropdown: function() {
+    const dropdown = document.getElementById('projectCategory');
+    if (!dropdown) return;
+
+    dropdown.innerHTML = '<option value="">-- Select Category --</option>';
+    this.categories.forEach(category => {
+      const option = document.createElement('option');
+      option.value = category;
+      option.textContent = category;
+      dropdown.appendChild(option);
+    });
+  }
+};
+
+// Image Upload Manager
+const ImageUploadManager = {
+  // Handle image file selection
+  handleFileSelect: function(event) {
+    const file = event.target.files[0];
+    if (!file) {
+      // Clear preview if no file selected
+      const previewContainer = document.getElementById('imagePreviewContainer');
+      if (previewContainer) {
+        previewContainer.style.display = 'none';
+      }
+      const imageInput = document.getElementById('projectImage');
+      if (imageInput && !imageInput.value) {
+        imageInput.value = '';
+      }
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file (JPG, PNG, GIF, etc.)');
+      event.target.value = '';
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image size should be less than 5MB');
+      event.target.value = '';
+      return;
+    }
+
+    // Show preview
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const previewContainer = document.getElementById('imagePreviewContainer');
+      const preview = document.getElementById('imagePreview');
+      const imageUrlInput = document.getElementById('projectImage');
+      
+      if (preview) {
+        preview.src = e.target.result;
+      }
+      if (previewContainer) {
+        previewContainer.style.display = 'block';
+      }
+      
+      // Store base64 data and generate filename
+      const timestamp = Date.now();
+      const fileExtension = file.name.split('.').pop();
+      const filename = `img/project-${timestamp}.${fileExtension}`;
+      
+      // Store file data for upload
+      if (imageUrlInput) {
+        imageUrlInput.dataset.fileData = e.target.result;
+        imageUrlInput.dataset.fileName = filename;
+        // Set the path in the input field
+        if (!imageUrlInput.value || imageUrlInput.value.trim() === '') {
+          imageUrlInput.value = filename;
+        }
+      }
+    };
+    reader.onerror = function() {
+      alert('Error reading file. Please try again.');
+    };
+    reader.readAsDataURL(file);
+
+    // Update file input label
+    const label = document.querySelector('.custom-file-label');
+    if (label) {
+      label.textContent = file.name;
+    }
+  },
+
+  // Convert file to base64 (for storage in database or saving)
+  fileToBase64: function(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  },
+
+  // Download image file (client-side save to img folder)
+  downloadImage: function(base64Data, filename) {
+    try {
+      const link = document.createElement('a');
+      link.href = base64Data;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return true;
+    } catch (error) {
+      console.error('Error downloading image:', error);
+      return false;
+    }
+  }
+};
+
 // Project Manager - Updated to use Supabase
 const ProjectManager = {
   projects: [], // Cache projects
@@ -131,6 +277,34 @@ const ProjectManager = {
   showAddForm: function() {
     document.getElementById('projectId').value = '';
     document.getElementById('projectForm').reset();
+    
+    // Reset image preview
+    const previewContainer = document.getElementById('imagePreviewContainer');
+    const preview = document.getElementById('imagePreview');
+    if (previewContainer) previewContainer.style.display = 'none';
+    if (preview) preview.src = '';
+    
+    // Clear file input
+    const fileInput = document.getElementById('projectImageFile');
+    if (fileInput) fileInput.value = '';
+    const label = document.querySelector('.custom-file-label');
+    if (label) label.textContent = 'Choose image file...';
+    
+    // Clear image URL data
+    const imageInput = document.getElementById('projectImage');
+    if (imageInput) {
+      imageInput.dataset.fileData = '';
+      imageInput.dataset.fileName = '';
+    }
+    
+    // Populate categories
+    CategoryManager.populateDropdown();
+    
+    // Set today's date as default
+    const today = new Date().toISOString().split('T')[0];
+    const dateInput = document.getElementById('projectDate');
+    if (dateInput) dateInput.value = today;
+    
     $('#projectModal').modal('show');
   },
 
@@ -144,11 +318,78 @@ const ProjectManager = {
     
     document.getElementById('projectId').value = project.id;
     document.getElementById('projectTitle').value = project.title;
-    document.getElementById('projectCategory').value = project.category;
-    document.getElementById('projectDate').value = project.date;
-    document.getElementById('projectImage').value = project.image;
+    
+    // Populate categories first, then set value
+    CategoryManager.populateDropdown();
+    const categorySelect = document.getElementById('projectCategory');
+    if (categorySelect) {
+      // Small delay to ensure dropdown is populated
+      setTimeout(() => {
+        categorySelect.value = project.category;
+      }, 100);
+    }
+    
+    // Convert date format if needed (handle both formats)
+    let dateValue = project.date;
+    if (dateValue && !dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      // If it's in format like "August 2024", convert to date
+      try {
+        // Try to parse month name format
+        const months = ['january', 'february', 'march', 'april', 'may', 'june', 
+                       'july', 'august', 'september', 'october', 'november', 'december'];
+        const parts = dateValue.toLowerCase().split(' ');
+        if (parts.length >= 2) {
+          const monthIndex = months.indexOf(parts[0]);
+          const year = parseInt(parts[1]);
+          if (monthIndex !== -1 && !isNaN(year)) {
+            const date = new Date(year, monthIndex, 1);
+            dateValue = date.toISOString().split('T')[0];
+          }
+        }
+        
+        // If still not valid, try direct Date parsing
+        if (!dateValue.match(/^\d{4}-\d{2}-\d{2}$/)) {
+          const date = new Date(project.date);
+          if (!isNaN(date.getTime())) {
+            dateValue = date.toISOString().split('T')[0];
+          }
+        }
+      } catch (e) {
+        console.warn('Could not parse date:', project.date);
+        // Use current date as fallback
+        dateValue = new Date().toISOString().split('T')[0];
+      }
+    }
+    
+    const dateInput = document.getElementById('projectDate');
+    if (dateInput) dateInput.value = dateValue || '';
+    
+    const imageInput = document.getElementById('projectImage');
+    if (imageInput) {
+      imageInput.value = project.image || '';
+      // Show image preview if image exists
+      if (project.image) {
+        const previewContainer = document.getElementById('imagePreviewContainer');
+        const preview = document.getElementById('imagePreview');
+        if (preview) preview.src = project.image;
+        if (previewContainer) previewContainer.style.display = 'block';
+      }
+    }
+    
     document.getElementById('projectUrl').value = project.url || '';
     document.getElementById('projectDescription').value = project.description || '';
+    
+    // Clear file input
+    const fileInput = document.getElementById('projectImageFile');
+    if (fileInput) fileInput.value = '';
+    const label = document.querySelector('.custom-file-label');
+    if (label) label.textContent = 'Choose image file...';
+    
+    // Clear file data
+    if (imageInput) {
+      imageInput.dataset.fileData = '';
+      imageInput.dataset.fileName = '';
+    }
     
     $('#projectModal').modal('show');
   },
@@ -161,11 +402,52 @@ const ProjectManager = {
       return;
     }
 
+    // Handle date format conversion from date picker to display format
+    const dateInput = document.getElementById('projectDate');
+    let formattedDate = '';
+    if (dateInput && dateInput.value) {
+      const date = new Date(dateInput.value);
+      if (!isNaN(date.getTime())) {
+        const months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                       'July', 'August', 'September', 'October', 'November', 'December'];
+        formattedDate = `${months[date.getMonth()]} ${date.getFullYear()}`;
+      } else {
+        formattedDate = dateInput.value; // Fallback to raw value
+      }
+    }
+
+    // Handle image upload
+    const imageInput = document.getElementById('projectImage');
+    const fileInput = document.getElementById('projectImageFile');
+    let imagePath = imageInput ? imageInput.value.trim() : '';
+    
+    // If there's a file uploaded, handle it
+    if (fileInput && fileInput.files.length > 0 && imageInput) {
+      const fileData = imageInput.dataset.fileData;
+      const fileName = imageInput.dataset.fileName || `img/project-${Date.now()}.png`;
+      
+      if (fileData) {
+        // Store the filename for the database
+        imagePath = fileName;
+        
+        // In a production environment, you would upload to Supabase Storage here
+        // For now, we'll prompt the user to save the file
+        console.log('Image file ready. Filename:', fileName);
+        console.log('Base64 data available. In production, upload to Supabase Storage bucket.');
+      }
+    }
+
+    // Validate that either file is uploaded or URL is provided
+    if (!imagePath || imagePath.trim() === '') {
+      alert('Please upload an image file or provide an image URL/path');
+      return;
+    }
+
     const project = {
       title: document.getElementById('projectTitle').value,
       category: document.getElementById('projectCategory').value,
-      date: document.getElementById('projectDate').value,
-      image: document.getElementById('projectImage').value,
+      date: formattedDate,
+      image: imagePath,
       url: document.getElementById('projectUrl').value || 'https://github.com/aamir-786',
       description: document.getElementById('projectDescription').value || null
     };
@@ -184,6 +466,27 @@ const ProjectManager = {
     if (result.success) {
       this.loadProjects();
       $('#projectModal').modal('hide');
+      
+      // If file was uploaded, prompt user to save it manually
+      if (fileInput && fileInput.files.length > 0 && imageInput && imageInput.dataset.fileData) {
+        const fileName = imageInput.dataset.fileName;
+        const fileExtension = fileName ? fileName.split('.').pop() : 'png';
+        const downloadFileName = `project-${Date.now()}.${fileExtension}`;
+        
+        setTimeout(() => {
+          const save = confirm(
+            `Project saved successfully!\n\n` +
+            `An image file was uploaded. Would you like to download it now?\n\n` +
+            `After downloading, please move the file to the 'img' folder with the name: ${fileName ? fileName.split('/').pop() : downloadFileName}`
+          );
+          if (save) {
+            const success = ImageUploadManager.downloadImage(imageInput.dataset.fileData, downloadFileName);
+            if (success) {
+              alert(`File downloaded! Please rename it and move it to the 'img' folder.`);
+            }
+          }
+        }, 300);
+      }
     } else {
       alert('Error saving project: ' + (result.error || 'Unknown error'));
     }

@@ -121,15 +121,33 @@
             </div>
             <div class="form-group">
               <label>Category *</label>
-              <input type="text" class="form-control" id="projectCategory" placeholder="e.g., Web Design, Java Programming" required>
+              <select class="form-control" id="projectCategory" required>
+                <option value="">-- Select Category --</option>
+              </select>
+              <small class="form-text text-muted">Categories are loaded from categories.json</small>
             </div>
             <div class="form-group">
               <label>Date *</label>
-              <input type="text" class="form-control" id="projectDate" placeholder="e.g., August 2024" required>
+              <input type="date" class="form-control" id="projectDate" required>
+              <small class="form-text text-muted">Select the project completion date</small>
             </div>
             <div class="form-group">
-              <label>Image URL *</label>
-              <input type="text" class="form-control" id="projectImage" placeholder="e.g., img/tenis.png" required>
+              <label>Project Image *</label>
+              <div class="mb-2">
+                <div class="custom-file">
+                  <input type="file" class="custom-file-input" id="projectImageFile" accept="image/*">
+                  <label class="custom-file-label" for="projectImageFile">Choose image file...</label>
+                </div>
+                <small class="form-text text-muted">Upload an image file or use the URL field below</small>
+              </div>
+              <div class="mb-2">
+                <input type="text" class="form-control" id="projectImage" placeholder="e.g., img/tenis.png">
+                <small class="form-text text-muted">Or enter image URL/path manually</small>
+              </div>
+              <div id="imagePreviewContainer" class="mt-2" style="display: none;">
+                <label>Image Preview:</label>
+                <img id="imagePreview" src="" alt="Preview" class="img-thumbnail" style="max-width: 200px; max-height: 200px; display: block; margin-top: 5px;">
+              </div>
             </div>
             <div class="form-group">
               <label>Live URL</label>
@@ -253,7 +271,17 @@
     })();
 
     // Initialize dashboard
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Load categories first
+      await CategoryManager.loadCategories();
+      CategoryManager.populateDropdown();
+      
+      // Setup image file upload handler
+      const fileInput = document.getElementById('projectImageFile');
+      if (fileInput) {
+        fileInput.addEventListener('change', ImageUploadManager.handleFileSelect);
+      }
+      
       // Navigation
       document.querySelectorAll('.nav-link').forEach(link => {
         link.addEventListener('click', function(e) {
