@@ -39,6 +39,8 @@
 	});
 
 	/*--/ Star Counter /--*/
+	// CounterService should have already updated counter values based on time
+	// counterUp will animate from 0 to the current text value
 	$('.counter').counterUp({
 		delay: 15,
 		time: 2000
