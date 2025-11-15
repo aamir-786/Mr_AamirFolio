@@ -114,36 +114,38 @@ const CategoryManager = {
       'Responsive Design': 'Web Development',
       'responsive design': 'Web Development',
       
-      // Full Stack Development (MERN Stack) variations
-      'Full Stack Development (MERN Stack)': 'Full Stack Development (MERN Stack)',
-      'full stack development (mern stack)': 'Full Stack Development (MERN Stack)',
-      'MERN Stack': 'Full Stack Development (MERN Stack)',
-      'mern stack': 'Full Stack Development (MERN Stack)',
-      'Full Stack': 'Full Stack Development (MERN Stack)',
-      'full stack': 'Full Stack Development (MERN Stack)',
-      'Software Engineering': 'Full Stack Development (MERN Stack)',
-      'software engineering': 'Full Stack Development (MERN Stack)',
-      'Software Engineering (Java)': 'Full Stack Development (MERN Stack)',
-      'Software Engineering(Java)': 'Full Stack Development (MERN Stack)',
-      'Software Engineering(java)': 'Full Stack Development (MERN Stack)',
-      'Java Programming': 'Full Stack Development (MERN Stack)',
-      'java programming': 'Full Stack Development (MERN Stack)',
-      'Java Development': 'Full Stack Development (MERN Stack)',
-      'java development': 'Full Stack Development (MERN Stack)',
-      'Java Project': 'Full Stack Development (MERN Stack)',
-      'java project': 'Full Stack Development (MERN Stack)',
-      'Java': 'Full Stack Development (MERN Stack)',
-      'java': 'Full Stack Development (MERN Stack)',
+      // Java Development variations
+      'Full Stack Development (MERN Stack)': 'Java Development',
+      'full stack development (mern stack)': 'Java Development',
+      'Full Stack Development': 'Java Development',
+      'full stack development': 'Java Development',
+      'MERN Stack': 'Java Development',
+      'mern stack': 'Java Development',
+      'Full Stack': 'Java Development',
+      'full stack': 'Java Development',
+      'Software Engineering': 'Java Development',
+      'software engineering': 'Java Development',
+      'Software Engineering (Java)': 'Java Development',
+      'Software Engineering(Java)': 'Java Development',
+      'Software Engineering(java)': 'Java Development',
+      'Java Programming': 'Java Development',
+      'java programming': 'Java Development',
+      'Java Development': 'Java Development',
+      'java development': 'Java Development',
+      'Java Project': 'Java Development',
+      'java project': 'Java Development',
+      'Java': 'Java Development',
+      'java': 'Java Development',
       
-      // AI variations
-      'AI': 'AI',
-      'ai': 'AI',
-      'Artificial Intelligence': 'AI',
-      'artificial intelligence': 'AI',
-      'Machine Learning': 'AI',
-      'machine learning': 'AI',
-      'ML': 'AI',
-      'ml': 'AI',
+      // AI variations - map to Java Development
+      'AI': 'Java Development',
+      'ai': 'Java Development',
+      'Artificial Intelligence': 'Java Development',
+      'artificial intelligence': 'Java Development',
+      'Machine Learning': 'Java Development',
+      'machine learning': 'Java Development',
+      'ML': 'Java Development',
+      'ml': 'Java Development',
     };
     
     // Check if category should be mapped
@@ -165,21 +167,17 @@ const CategoryManager = {
       return 'Web + PHP';
     }
     
-    // Check for AI
-    if (lowerNormalized.includes('artificial intelligence') || 
-        lowerNormalized.includes('machine learning') ||
-        lowerNormalized === 'ai' ||
-        lowerNormalized === 'ml') {
-      return 'AI';
-    }
-    
-    // Check for Full Stack / MERN Stack / Java (must check before general web categories)
+    // Check for Java Development / MERN Stack / AI (must check before general web categories)
     if (lowerNormalized.includes('mern') || 
         (lowerNormalized.includes('full stack') && !lowerNormalized.includes('web')) ||
         (lowerNormalized.includes('software engineering')) ||
         (lowerNormalized.includes('java')) ||
-        lowerNormalized === 'java') {
-      return 'Full Stack Development (MERN Stack)';
+        lowerNormalized === 'java' ||
+        lowerNormalized.includes('artificial intelligence') || 
+        lowerNormalized.includes('machine learning') ||
+        lowerNormalized === 'ai' ||
+        lowerNormalized === 'ml') {
+      return 'Java Development';
     }
     
     // Check for Web Development (general web categories - check last)
@@ -215,11 +213,10 @@ const CategoryManager = {
       console.error('Error loading categories:', error);
       // Fallback categories (normalized)
       this.categories = [
-        'Web + Python',
-        'Web + PHP',
         'Web Development',
-        'Full Stack Development (MERN Stack)',
-        'AI'
+        'Java Development',
+        'Web + PHP',
+        'Web + Python'
       ];
       return this.categories;
     }

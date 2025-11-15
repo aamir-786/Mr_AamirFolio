@@ -70,36 +70,38 @@
       'Responsive Design': 'Web Development',
       'responsive design': 'Web Development',
       
-      // Full Stack Development (MERN Stack) variations
-      'Full Stack Development (MERN Stack)': 'Full Stack Development (MERN Stack)',
-      'full stack development (mern stack)': 'Full Stack Development (MERN Stack)',
-      'MERN Stack': 'Full Stack Development (MERN Stack)',
-      'mern stack': 'Full Stack Development (MERN Stack)',
-      'Full Stack': 'Full Stack Development (MERN Stack)',
-      'full stack': 'Full Stack Development (MERN Stack)',
-      'Software Engineering': 'Full Stack Development (MERN Stack)',
-      'software engineering': 'Full Stack Development (MERN Stack)',
-      'Software Engineering (Java)': 'Full Stack Development (MERN Stack)',
-      'Software Engineering(Java)': 'Full Stack Development (MERN Stack)',
-      'Software Engineering(java)': 'Full Stack Development (MERN Stack)',
-      'Java Programming': 'Full Stack Development (MERN Stack)',
-      'java programming': 'Full Stack Development (MERN Stack)',
-      'Java Development': 'Full Stack Development (MERN Stack)',
-      'java development': 'Full Stack Development (MERN Stack)',
-      'Java Project': 'Full Stack Development (MERN Stack)',
-      'java project': 'Full Stack Development (MERN Stack)',
-      'Java': 'Full Stack Development (MERN Stack)',
-      'java': 'Full Stack Development (MERN Stack)',
+      // Java Development variations
+      'Full Stack Development (MERN Stack)': 'Java Development',
+      'full stack development (mern stack)': 'Java Development',
+      'Full Stack Development': 'Java Development',
+      'full stack development': 'Java Development',
+      'MERN Stack': 'Java Development',
+      'mern stack': 'Java Development',
+      'Full Stack': 'Java Development',
+      'full stack': 'Java Development',
+      'Software Engineering': 'Java Development',
+      'software engineering': 'Java Development',
+      'Software Engineering (Java)': 'Java Development',
+      'Software Engineering(Java)': 'Java Development',
+      'Software Engineering(java)': 'Java Development',
+      'Java Programming': 'Java Development',
+      'java programming': 'Java Development',
+      'Java Development': 'Java Development',
+      'java development': 'Java Development',
+      'Java Project': 'Java Development',
+      'java project': 'Java Development',
+      'Java': 'Java Development',
+      'java': 'Java Development',
       
-      // AI variations
-      'AI': 'AI',
-      'ai': 'AI',
-      'Artificial Intelligence': 'AI',
-      'artificial intelligence': 'AI',
-      'Machine Learning': 'AI',
-      'machine learning': 'AI',
-      'ML': 'AI',
-      'ml': 'AI',
+      // AI variations - map to Java Development
+      'AI': 'Java Development',
+      'ai': 'Java Development',
+      'Artificial Intelligence': 'Java Development',
+      'artificial intelligence': 'Java Development',
+      'Machine Learning': 'Java Development',
+      'machine learning': 'Java Development',
+      'ML': 'Java Development',
+      'ml': 'Java Development',
     };
     
     // Check if category should be mapped
@@ -121,21 +123,17 @@
       return 'Web + PHP';
     }
     
-    // Check for AI
-    if (lowerNormalized.includes('artificial intelligence') || 
-        lowerNormalized.includes('machine learning') ||
-        lowerNormalized === 'ai' ||
-        lowerNormalized === 'ml') {
-      return 'AI';
-    }
-    
-    // Check for Full Stack / MERN Stack / Java (must check before general web categories)
+    // Check for Java Development / MERN Stack / AI (must check before general web categories)
     if (lowerNormalized.includes('mern') || 
         (lowerNormalized.includes('full stack') && !lowerNormalized.includes('web')) ||
         (lowerNormalized.includes('software engineering')) ||
         (lowerNormalized.includes('java')) ||
-        lowerNormalized === 'java') {
-      return 'Full Stack Development (MERN Stack)';
+        lowerNormalized === 'java' ||
+        lowerNormalized.includes('artificial intelligence') || 
+        lowerNormalized.includes('machine learning') ||
+        lowerNormalized === 'ai' ||
+        lowerNormalized === 'ml') {
+      return 'Java Development';
     }
     
     // Check for Web Development (general web categories - check last)
@@ -171,11 +169,10 @@
     }
     // Fallback categories (normalized)
     return [
-      'Web + Python',
-      'Web + PHP',
       'Web Development',
-      'Full Stack Development (MERN Stack)',
-      'AI'
+      'Java Development',
+      'Web + PHP',
+      'Web + Python'
     ];
   }
 
@@ -193,33 +190,32 @@
     const filterContainer = document.getElementById('portfolio-filter');
     if (!filterContainer) return;
 
-    // allProjects is already normalized when loaded, so use it directly
-    // Get unique normalized categories from projects
-    const projectCategories = [...new Set(allProjects.map(p => p.category))]
-      .filter(cat => cat) // Remove empty categories
-      .sort();
+    // Clear ALL existing filter buttons first (we'll recreate them)
+    filterContainer.innerHTML = '<button class="filter-btn active" data-filter="all">All</button>';
     
-    // Load categories from JSON and normalize
+    // Load categories from JSON - these are our definitive 4 categories
     const jsonCategories = await loadCategories();
     
-    // Combine and deduplicate: use project categories if available, otherwise use JSON categories
-    const allCategories = projectCategories.length > 0 ? projectCategories : jsonCategories;
-    const uniqueCategories = [...new Set(allCategories)].sort();
+    // Ensure no duplicates and sort
+    const uniqueCategories = [...new Set(jsonCategories)].sort();
     
     // Add filter buttons for each category
-    const filterButtons = uniqueCategories.map(category => 
-      `<button class="filter-btn" data-filter="${category}">${category}</button>`
-    ).join('');
+    uniqueCategories.forEach(category => {
+      const button = document.createElement('button');
+      button.className = 'filter-btn';
+      button.setAttribute('data-filter', category);
+      button.textContent = category;
+      filterContainer.appendChild(button);
+    });
     
-    // Insert after "All" button
-    const allButton = filterContainer.querySelector('[data-filter="all"]');
-    if (allButton) {
-      allButton.insertAdjacentHTML('afterend', filterButtons);
-    }
-    
-    // Add click handlers to filter buttons
+    // Add click handlers to all filter buttons (including "All")
     filterContainer.querySelectorAll('.filter-btn').forEach(btn => {
-      btn.addEventListener('click', function() {
+      // Remove existing listeners by cloning (prevents duplicate listeners)
+      const newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
+      
+      // Add new event listener
+      newBtn.addEventListener('click', function() {
         // Update active state
         filterContainer.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
