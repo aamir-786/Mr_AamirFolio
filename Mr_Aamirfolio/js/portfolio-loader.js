@@ -262,9 +262,12 @@
     return `
       <div class="col-md-4 project-item" data-category="${project.category}">
         <div class="work-box">
-          <a href="${project.image}" data-lightbox="gallery-mf" data-title="${project.title}">
+          <a href="${project.image}" data-lightbox="gallery-mf" data-title="${project.title}" aria-label="View ${project.title} image">
             <div class="work-img">
-              <img src="${project.image}" alt="${project.title}" class="img-fluid" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Crect width=\'200\' height=\'200\' fill=\'%23f0f0f0\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23999\' font-family=\'Arial\' font-size=\'14\'%3ENo Image%3C/text%3E%3C/svg%3E'">
+              <img src="${project.image}" alt="${project.title} - ${project.category}" class="img-fluid" loading="lazy" onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'200\' height=\'200\'%3E%3Crect width=\'200\' height=\'200\' fill=\'%23f0f0f0\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%23999\' font-family=\'Arial\' font-size=\'14\'%3ENo Image%3C/text%3E%3C/svg%3E'">
+              <div class="work-overlay">
+                <span class="ion-ios-search-strong"></span>
+              </div>
             </div>
           </a>
           <div class="work-content">
@@ -272,10 +275,10 @@
               <div class="col-sm-8">
                 <h2 class="w-title" title="${project.title}">${displayTitle}</h2>
                 <div class="w-more">
-                  <span class="w-ctegory" title="${project.category}">${displayCategory}</span> / <span class="w-date">${project.date}</span>
+                  <span class="w-ctegory" title="${project.category}"><i class="ion-pricetag mr-1"></i>${displayCategory}</span> / <span class="w-date"><i class="ion-calendar mr-1"></i>${project.date}</span>
                 </div>
               </div>
-              <div class="col-sm-4">
+              <div class="col-sm-4 text-right">
                 <div class="w-like">
                   <span class="ion-ios-plus-outline"></span>
                 </div>
@@ -285,13 +288,16 @@
             <div class="row">
               <div class="col-12">
                 <p class="w-description">${shortDescription}</p>
-                ${hasMore ? `<a href="project-details.html?id=${project.id}" class="read-more-link">Read More</a>` : ''}
+                ${hasMore ? `<a href="project-details.html?id=${project.id}" class="read-more-link" aria-label="Read more about ${project.title}">Read More <i class="ion-arrow-right-c"></i></a>` : ''}
               </div>
             </div>
             ` : ''}
             <div class="row">
               <div class="col-12">
-                <a href="${project.url || 'https://github.com/aamir-786'}" target="_blank" class="btn-go-live">Go Live</a>
+                <a href="${project.url || 'https://github.com/aamir-786'}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" aria-label="View ${project.title} live project">
+                  <i class="ion-ios-eye"></i> View Project
+                </a>
+                ${project.id ? `<a href="project-details.html?id=${project.id}" class="btn btn-outline-primary" aria-label="View ${project.title} details"><i class="ion-ios-information-circle"></i> Details</a>` : ''}
               </div>
             </div>
           </div>
@@ -404,20 +410,32 @@
         return;
       }
 
-      container.innerHTML = reviews.map(review => `
-        <div class="testimonial-box">
-          <div class="author-test">
-            <img src="${review.image}" alt="${review.author}" class="rounded-circle b-shadow-a" onerror="this.src='img/testimonial-2.jpg'">
-            <span class="author">${review.author}</span>
+      container.innerHTML = reviews.map(review => {
+        const rating = review.rating || 5;
+        const stars = Array(rating).fill(0).map(() => '<i class="ion-ios-star"></i>').join('');
+        const emptyStars = Array(5 - rating).fill(0).map(() => '<i class="ion-ios-star-outline"></i>').join('');
+        
+        return `
+          <div class="testimonial-box">
+            <div class="author-test">
+              <img src="${review.image || 'img/testimonial-2.jpg'}" alt="${review.author}" class="rounded-circle b-shadow-a" loading="lazy" onerror="this.src='img/testimonial-2.jpg'">
+              <div class="author-info">
+                <span class="author">${review.author}</span>
+                ${review.role ? `<span class="testimonial-role">${review.role}</span>` : ''}
+              </div>
+            </div>
+            <div class="rating" aria-label="Rating: ${rating} out of 5 stars">
+              ${stars}${emptyStars}
+            </div>
+            <div class="content-test">
+              <p class="description lead">
+                "${review.text}"
+              </p>
+              <span class="comit"><i class="fa fa-quote-right"></i></span>
+            </div>
           </div>
-          <div class="content-test">
-            <p class="description lead">
-              ${review.text}
-            </p>
-            <span class="comit"><i class="fa fa-quote-right"></i></span>
-          </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
 
       // Reinitialize owl carousel if it exists
       if (typeof jQuery !== 'undefined' && jQuery('#testimonial-mf').length) {

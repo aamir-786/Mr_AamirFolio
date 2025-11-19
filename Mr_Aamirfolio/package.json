@@ -1,0 +1,29 @@
+{
+  "name": "mr-aamir-portfolio",
+  "version": "1.0.0",
+  "description": "Aamir Hussain - Full Stack Developer Portfolio Website",
+  "scripts": {
+    "dev": "npx http-server ./ -p 4173 -c-1 -o"
+  },
+  "keywords": [
+    "portfolio",
+    "web-development",
+    "full-stack-developer",
+    "java",
+    "javascript",
+    "python"
+  ],
+  "author": "Aamir Hussain",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aamir-786/Mr_AamirFolio.git"
+  },
+  "homepage": "https://mr-aamir-folio.vercel.app",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "devDependencies": {},
+  "dependencies": {}
+}
+

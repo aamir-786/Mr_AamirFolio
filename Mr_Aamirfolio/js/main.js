@@ -69,11 +69,17 @@
 	}
 
 	/*--/ Star Scrolling nav /--*/
-	$('a.js-scroll[href*="#"]:not([href="#"])').on("click", function () {
+	$('a.js-scroll[href*="#"]:not([href="#"])').on("click", function (e) {
+		e.preventDefault();
 		if (location.pathname.replace(/^\//, '') == this.pathname.replace(/^\//, '') && location.hostname == this.hostname) {
 			var target = $(this.hash);
 			target = target.length ? target : $('[name=' + this.hash.slice(1) + ']');
 			if (target.length) {
+				// Update active nav link
+				$('.navbar-nav .nav-link').removeClass('active');
+				$(this).closest('.nav-link').addClass('active');
+				
+				// Smooth scroll
 				$('html, body').animate({
 					scrollTop: (target.offset().top - navHeight + 5)
 				}, 1000, "easeInOutExpo");
@@ -90,7 +96,20 @@
 	// Activate scrollspy to add active class to navbar items on scroll
 	$('body').scrollspy({
 		target: '#mainNav',
-		offset: navHeight
+		offset: navHeight + 10
+	});
+	
+	// Update active nav link on scroll
+	$(window).on('scroll', function() {
+		var scrollPos = $(window).scrollTop() + navHeight + 100;
+		$('.navbar-nav .nav-link').each(function() {
+			var currLink = $(this);
+			var refElement = $(currLink.attr('href'));
+			if (refElement.length && refElement.position().top <= scrollPos && refElement.position().top + refElement.height() > scrollPos) {
+				$('.navbar-nav .nav-link').removeClass('active');
+				currLink.addClass('active');
+			}
+		});
 	});
 	/*--/ End Scrolling nav /--*/
 
