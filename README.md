@@ -167,6 +167,7 @@ CREATE TABLE projects (
 );
 ```
 
+
 ### Reviews Table
 ```sql
 CREATE TABLE reviews (
@@ -191,6 +192,7 @@ CREATE TABLE contact_messages (
   read BOOLEAN DEFAULT false
 );
 ```
+
 
 ## 📝 Configuration
 
