@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Aamir Hussain - Full Stack Developer Portfolio Website",
   "scripts": {
-    "dev": "npx http-server ./ -p 4173 -c-1 -o"
+    "dev": "node init && npx http-server ./ -p 4173 -c-1 -o"
   },
   "keywords": [
     "portfolio",
@@ -26,4 +26,3 @@
   "devDependencies": {},
   "dependencies": {}
 }
-

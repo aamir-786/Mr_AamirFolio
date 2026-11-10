@@ -255,7 +255,7 @@ This project is deployed on **Vercel**:
 
 - **Email**: [aamir.fss22@gmail.com](mailto:aamir.fss22@gmail.com)
 - **Phone**: 0316-3600793
-- **Location**: 100ft. road near Sukkur IBA University, Sukkur Sindh
+- **Location**: Pakistan
 - **GitHub**: [@aamir-786](https://github.com/aamir-786)
 - **LinkedIn**: [Aamir Hussain](https://www.linkedin.com/in/aamir-hussain-b0b3bb234)
 - **Facebook**: [Amir Hussain Mangrio](https://www.facebook.com/amirhussain.mangrio.737)
@@ -283,7 +283,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-**Made with ❤️ by Aamir Hussain**
+**Made by Aamir Hussain**
 
 *Last updated: November 2025*
 
